@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dibbi Counter Vault</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f1f5f9; padding: 20px; color: #334155; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .logo { font-size: 22px; font-weight: bold; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+        .badge { background: #22c55e; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+        
+        .main-container { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+        .qr-card { background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .qr-card h3 { margin-bottom: 5px; color: #1e293b; }
+        .qr-card p { font-size: 13px; color: #64748b; margin-bottom: 15px; }
+        #qrcode { background: #f8fafc; padding: 10px; border: 2px dashed #cbd5e1; border-radius: 8px; display: inline-block; }
+        
+        .table-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background: #f8fafc; color: #475569; font-weight: 600; }
+        
+        .doc-badge { background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .btn-open { background: #2563eb; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; }
+        .btn-open:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo">Dibbi Receiver Dashboard <span class="badge">• LIVE</span></div>
+        <div style="font-size: 14px; color: #64748b;">Counter #1 (P2P Zero Cloud)</div>
+    </div>
+
+    <div class="main-container">
+        <!-- QR Code Panel -->
+        <div class="qr-card">
+            <h3>Scan to Upload</h3>
+            <p>Customer camera se QR scan karein</p>
+            <div id="qrcode"></div>
+            <p style="margin-top: 15px; font-size: 11px; color: #94a3b8;" id="room-info">Connecting...</p>
+        </div>
+
+        <!-- Live Table Panel -->
+        <div class="table-card">
+            <h3 style="margin-bottom: 15px;">Received Documents</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Document Type</th>
+                        <th>File Name</th>
+                        <th>Time</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="doc-list">
+                    <!-- Files yahan live add hongi -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const roomId = "room_" + Math.random().toString(36).substring(2, 7);
+        const uploadURL = `${window.location.origin}/upload.html?room=${roomId}`;
+
+        QRCode.toCanvas(document.createElement('canvas'), uploadURL, (err, canvas) => {
+            document.getElementById('qrcode').appendChild(canvas);
+        });
+
+        document.getElementById('room-info').innerText = `Session ID: ${roomId}`;
+        socket.emit('join-room', roomId);
+
+        socket.on('receive-document', (data) => {
+            // Auto download file
+            const a = document.createElement('a');
+            a.href = data.fileData;
+            a.download = data.fileName;
+            a.click();
+
+            // Add row to UI Table
+            const tbody = document.getElementById('doc-list');
+            const row = document.createElement('tr');
+            
+            const timeStr = new Date().toLocaleTimeString();
+            
+            row.innerHTML = `
+                <td><span class="doc-badge">${data.docType || 'Document'}</span></td>
+                <td><b>${data.fileName}</b></td>
+                <td>${timeStr}</td>
+                <td><a href="${data.fileData}" target="_blank" class="btn-open">View Document</a></td>
+            `;
+            
+            tbody.prepend(row);
+        });
+    </script>
+</body>
+</html>

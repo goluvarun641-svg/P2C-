@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Vault - Share Document</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #fff; margin: 0; padding: 20px; text-align: center; }
+        .card { background: #1e1e1e; padding: 20px; border-radius: 12px; max-width: 400px; margin: 20px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { color: #00e676; margin-bottom: 5px; }
+        p { color: #aaa; font-size: 14px; }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        label { font-size: 13px; color: #bbb; display: block; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #333; background: #2a2a2a; color: white; box-sizing: border-box; font-size: 15px; }
+        .btn-share { background: #00e676; color: #000; font-weight: bold; padding: 14px; border: none; border-radius: 6px; width: 100%; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        .btn-share:hover { background: #00c853; }
+        .status { margin-top: 15px; padding: 10px; border-radius: 6px; display: none; font-weight: bold; }
+        .success { background: #1b5e20; color: #81c784; }
+        .error { background: #b71c1c; color: #ef9a9a; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>🔒 Dibbi Secure Vault</h2>
+        <p>Select & approve document to transfer</p>
+        <hr style="border-color: #333; margin-bottom: 20px;">
+
+        <form id="shareForm">
+            <div class="form-group">
+                <label>User ID / Reg Number:</label>
+                <input type="text" id="userId" placeholder="e.g. USR-108" required>
+            </div>
+
+            <div class="form-group">
+                <label>Select Document Type:</label>
+                <select id="docType">
+                    <option value="Aadhaar Card">Aadhaar Card</option>
+                    <option value="Pan Card">PAN Card</option>
+                    <option value="College Marksheet">College Marksheet</option>
+                    <option value="Driving License">Driving License</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Upload Document File (PDF/Image):</label>
+                <input type="file" id="docFile" accept="image/*,application/pdf" required>
+            </div>
+
+            <button type="submit" class="btn-share">🚀 Approve & Share with Counter</button>
+        </form>
+
+        <div id="statusMsg" class="status"></div>
+    </div>
+
+    <script src="mobile.js"></script>
+</body>
+</html>

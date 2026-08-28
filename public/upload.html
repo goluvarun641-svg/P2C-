@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dibbi Secure Upload</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: #0f172a; color: white; padding: 25px 20px; }
+        .card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
+        h2 { color: #38bdf8; margin-bottom: 5px; }
+        p { color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
+        label { font-size: 13px; color: #cbd5e1; display: block; margin-top: 15px; margin-bottom: 5px; }
+        select, input[type="file"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 14px; }
+        .btn { background: #0284c7; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 8px; width: 100%; margin-top: 25px; }
+        .status { margin-top: 15px; text-align: center; color: #4ade80; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Dibbi Secure Vault</h2>
+        <p>Send document directly to counter screen</p>
+
+        <label>Document Category</label>
+        <select id="docType">
+            <option value="Aadhaar Card">Aadhaar Card</option>
+            <option value="PAN Card">PAN Card</option>
+            <option value="Photo / Marksheet">Photo / Marksheet</option>
+            <option value="Other Document">Other Document</option>
+        </select>
+
+        <label>Select File</label>
+        <input type="file" id="fileInput">
+
+        <button class="btn" onclick="sendFile()">Approve & Share 🚀</button>
+        <div class="status" id="msg"></div>
+    </div>
+
+    <script>
+        const socket = io();
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+
+        function sendFile() {
+            const file = document.getElementById('fileInput').files[0];
+            const docType = document.getElementById('docType').value;
+            if (!file) return alert("Pehle file select karein!");
+
+            document.getElementById('msg').innerText = "Sending...";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                socket.emit('send-document', {
+                    roomId: roomId,
+                    docType: docType,
+                    fileName: file.name,
+                    fileData: e.target.result
+                });
+                document.getElementById('msg').innerText = "✅ Sent to Counter Screen!";
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
