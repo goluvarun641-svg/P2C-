@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dibbi Counter Vault - Transfer Timeline</title>
+    <title>Dibbi Counter Vault - Permanent Counter</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
@@ -36,13 +36,13 @@
 
     <div class="header">
         <div class="logo">Dibbi Receiver Dashboard <span class="badge">• LIVE</span></div>
-        <div style="font-size: 14px; color: #64748b;">Counter #1 (P2P Timeline Vault)</div>
+        <div style="font-size: 14px; color: #64748b;">Counter #1 (Fixed Session)</div>
     </div>
 
     <div class="main-container">
         <div class="qr-card">
             <h3>Scan to Upload</h3>
-            <p>Customer camera se QR scan karein</p>
+            <p>Permanent Standee QR Code</p>
             <div id="qrcode"></div>
             <p style="margin-top: 15px; font-size: 11px; color: #94a3b8;" id="room-info">Connecting...</p>
         </div>
@@ -67,14 +67,16 @@
 
     <script>
         const socket = io();
-        const roomId = "room_" + Math.random().toString(36).substring(2, 7);
+        
+        // Permanent Counter ID (Ye kabhi change nahi hoga)
+        const roomId = "counter_jaipur_01"; 
         const uploadURL = `${window.location.origin}/upload.html?room=${roomId}`;
 
         QRCode.toCanvas(document.createElement('canvas'), uploadURL, (err, canvas) => {
             document.getElementById('qrcode').appendChild(canvas);
         });
 
-        document.getElementById('room-info').innerText = `Session ID: ${roomId}`;
+        document.getElementById('room-info').innerText = `Fixed Counter ID: ${roomId}`;
         socket.emit('join-room', roomId);
 
         function base64ToBlobUrl(base64Data) {
@@ -92,19 +94,17 @@
         socket.on('receive-document', (data) => {
             const blobUrl = base64ToBlobUrl(data.fileData);
 
-            // Auto download file to Laptop's Downloads Folder
+            // Auto download file to Laptop
             const a = document.createElement('a');
             a.href = blobUrl;
             a.download = data.fileName;
             a.click();
 
-            // Format current Date & Time
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
             const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
             const fullTimeline = `${dateStr} | ${timeStr}`;
 
-            // Add row to Timeline Table
             const tbody = document.getElementById('doc-list');
             const row = document.createElement('tr');
             
