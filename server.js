@@ -16,7 +16,12 @@ io.on('connection', (socket) => {
 
     socket.on('send-document', (data) => {
         // Document direct laptop ko stream/pipe ho jayega (Zero Cloud Storage)
-        socket.to(data.roomId).emit('receive-document', data);
+        io.to(data.roomId).emit('receive-document', data);
+    });
+
+    // Digital Token Verification Event
+    socket.on('verify-token-send', (data) => {
+        io.to(data.roomId).emit('document-verified-reply', data);
     });
 });
 
