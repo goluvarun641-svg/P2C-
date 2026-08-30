@@ -3,67 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dibbi Counter Vault - Sound Alert Enabled</title>
+    <title>Dibbi Paperless Vault - Digital Verification</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f1f5f9; padding: 20px; color: #334155; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .logo { font-size: 22px; font-weight: bold; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+        body { background-color: #0f172a; padding: 20px; color: #f8fafc; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #1e293b; padding: 15px 25px; border-radius: 12px; border: 1px solid #334155; }
+        .logo { font-size: 22px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
         .badge { background: #22c55e; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; }
         
         .main-container { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
-        .qr-card { background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .qr-card h3 { margin-bottom: 5px; color: #1e293b; }
-        .qr-card p { font-size: 13px; color: #64748b; margin-bottom: 15px; }
-        #qrcode { background: #f8fafc; padding: 10px; border: 2px dashed #cbd5e1; border-radius: 8px; display: inline-block; }
+        .qr-card { background: #1e293b; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
+        .qr-card h3 { margin-bottom: 5px; color: #f8fafc; }
+        .qr-card p { font-size: 13px; color: #94a3b8; margin-bottom: 15px; }
+        #qrcode { background: white; padding: 10px; border-radius: 8px; display: inline-block; }
         
-        .table-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .table-card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
-        th { background: #f8fafc; color: #475569; font-weight: 600; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #334155; font-size: 13px; }
+        th { background: #0f172a; color: #94a3b8; font-weight: 600; }
         
-        .doc-badge { background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; }
-        .time-badge { background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; }
-        .share-badge { background: #fef3c7; color: #d97706; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .doc-badge { background: #0284c7; color: white; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; }
+        .time-badge { background: #334155; color: #cbd5e1; padding: 4px 8px; border-radius: 6px; font-size: 11px; }
+        .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .status-pending { background: #f59e0b; color: #000; }
+        .status-verified { background: #22c55e; color: #000; }
         
-        .btn-open { background: #2563eb; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block; margin-right: 5px; }
-        .btn-open:hover { background: #1d4ed8; }
-        .btn-print { background: #16a34a; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; }
-        .btn-print:hover { background: #15803d; }
-
-        @media (max-width: 768px) {
-            .main-container { grid-template-columns: 1fr; }
-            .table-card { overflow-x: auto; }
-        }
+        .btn-view { background: #38bdf8; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-right: 5px; }
+        .btn-verify { background: #22c55e; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; }
+        
+        /* Modal Viewer */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
+        .modal-content { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 800px; width: 90%; text-align: center; border: 1px solid #475569; position: relative; }
+        .modal-content img, .modal-content iframe { max-width: 100%; max-height: 70vh; border-radius: 8px; margin-top: 10px; }
+        .close-btn { position: absolute; right: 15px; top: 15px; color: #fff; font-size: 20px; cursor: pointer; background: #334155; width: 30px; height: 30px; border-radius: 50%; line-height: 30px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">Dibbi Receiver Dashboard <span class="badge">• LIVE</span></div>
-        <div style="font-size: 14px; color: #64748b;">Counter #1 (Sound & Print Enabled)</div>
+        <div class="logo">🍃 Dibbi Paperless Counter <span class="badge">• ZERO PAPER</span></div>
+        <div style="font-size: 14px; color: #94a3b8;">Counter Verification Terminal #1</div>
     </div>
 
     <div class="main-container">
         <div class="qr-card">
-            <h3>Scan to Upload</h3>
-            <p>Permanent Standee QR Code</p>
+            <h3>Scan for Paperless Share</h3>
+            <p>Digital Inspection & Verification</p>
             <div id="qrcode"></div>
             <p style="margin-top: 15px; font-size: 11px; color: #94a3b8;" id="room-info">Connecting...</p>
         </div>
 
         <div class="table-card">
-            <h3 style="margin-bottom: 15px;">Document Sharing Timeline</h3>
+            <h3 style="margin-bottom: 15px;">Live Verification Queue</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>Date & Time</th>
-                        <th>Document Type</th>
+                        <th>Time</th>
+                        <th>Document</th>
                         <th>File Name</th>
-                        <th>Shared Log</th>
-                        <th>Action</th>
+                        <th>Verification Status</th>
+                        <th>Digital Actions</th>
                     </tr>
                 </thead>
                 <tbody id="doc-list">
@@ -72,111 +73,98 @@
         </div>
     </div>
 
+    <!-- Viewer Modal -->
+    <div class="modal" id="viewerModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle">Digital Inspection</h3>
+            <div id="mediaContainer"></div>
+        </div>
+    </div>
+
     <script>
         const socket = io();
         const roomId = "counter_jaipur_01"; 
         const uploadURL = `${window.location.origin}/upload.html?room=${roomId}`;
+        let tokenCounter = 101;
 
         QRCode.toCanvas(document.createElement('canvas'), uploadURL, (err, canvas) => {
             document.getElementById('qrcode').appendChild(canvas);
         });
 
-        document.getElementById('room-info').innerText = `Fixed Counter ID: ${roomId}`;
+        document.getElementById('room-info').innerText = `Counter ID: ${roomId}`;
         socket.emit('join-room', roomId);
 
-        // Sound Notification Function (Web Audio Synthesizer)
         function playAlertSound() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // First Note
-                const osc1 = audioCtx.createOscillator();
-                const gain1 = audioCtx.createGain();
-                osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-                gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                osc1.connect(gain1);
-                gain1.connect(audioCtx.destination);
-                osc1.start();
-                osc1.stop(audioCtx.currentTime + 0.15);
-
-                // Second Higher Note (Chime effect)
-                setTimeout(() => {
-                    const osc2 = audioCtx.createOscillator();
-                    const gain2 = audioCtx.createGain();
-                    osc2.type = 'sine';
-                    osc2.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-                    gain2.gain.setValueAtTime(0.4, audioCtx.currentTime);
-                    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                    osc2.connect(gain2);
-                    gain2.connect(audioCtx.destination);
-                    osc2.start();
-                    osc2.stop(audioCtx.currentTime + 0.3);
-                }, 120);
-            } catch(e) {
-                console.log("Audio play permission required", e);
-            }
-        }
-
-        function base64ToBlobUrl(base64Data) {
-            const parts = base64Data.split(';base64,');
-            const contentType = parts[0].split(':')[1];
-            const raw = window.atob(parts[1]);
-            const uInt8Array = new Uint8Array(raw.length);
-            for (let i = 0; i < raw.length; ++i) {
-                uInt8Array[i] = raw.charCodeAt(i);
-            }
-            const blob = new Blob([uInt8Array], { type: contentType });
-            return URL.createObjectURL(blob);
-        }
-
-        function triggerPrint(blobUrl) {
-            const printWin = window.open(blobUrl, '_blank');
-            if (printWin) {
-                printWin.focus();
-                setTimeout(() => {
-                    printWin.print();
-                }, 500);
-            }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } catch(e){}
         }
 
         socket.on('receive-document', (data) => {
-            // Play Sound Alert
             playAlertSound();
-
-            const blobUrl = base64ToBlobUrl(data.fileData);
-
-            // Auto Download
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = data.fileName;
-            a.click();
-
-            // Auto Print
-            triggerPrint(blobUrl);
-
+            const token = tokenCounter++;
             const now = new Date();
-            const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-            const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-            const fullTimeline = `${dateStr} | ${timeStr}`;
+            const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
             const tbody = document.getElementById('doc-list');
             const row = document.createElement('tr');
+            row.id = `row-${token}`;
             
             row.innerHTML = `
-                <td><span class="time-badge">${fullTimeline}</span></td>
+                <td><span class="time-badge">${timeStr}</span></td>
                 <td><span class="doc-badge">${data.docType || 'Document'}</span></td>
                 <td><b>${data.fileName}</b></td>
-                <td><span class="share-badge">Mobile ➔ Counter #1</span></td>
+                <td><span class="status-badge status-pending" id="status-${token}">Pending Check</span></td>
                 <td>
-                    <a href="${blobUrl}" target="_blank" class="btn-open">View</a>
-                    <button onclick="triggerPrint('${blobUrl}')" class="btn-print">🖨️ Print</button>
+                    <button onclick="inspectDoc('${data.fileData}', '${data.fileName}')" class="btn-view">👁️ Inspect</button>
+                    <button onclick="verifyDoc('${token}')" class="btn-verify" id="btn-${token}">✓ Approve & Token</button>
                 </td>
             `;
-            
             tbody.prepend(row);
         });
+
+        function inspectDoc(fileData, fileName) {
+            const container = document.getElementById('mediaContainer');
+            document.getElementById('modalTitle').innerText = fileName;
+            if(fileData.startsWith('data:image')) {
+                container.innerHTML = `<img src="${fileData}" />`;
+            } else {
+                container.innerHTML = `<iframe src="${fileData}" width="100%" height="500px"></iframe>`;
+            }
+            document.getElementById('viewerModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('viewerModal').style.display = 'none';
+        }
+
+        function verifyDoc(token) {
+            const statusTag = document.getElementById(`status-${token}`);
+            const btn = document.getElementById(`btn-${token}`);
+            
+            statusTag.className = "status-badge status-verified";
+            statusTag.innerText = `Verified (Token #${token})`;
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+
+            // Customer Ke Phone Par Instant Digital Token Bhejna
+            socket.emit('verify-token-send', {
+                roomId: roomId,
+                token: token,
+                msg: "Document Verified Paperlessly!"
+            });
+        }
     </script>
 </body>
 </html>
