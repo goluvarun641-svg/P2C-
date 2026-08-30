@@ -12,6 +12,9 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #1e293b; padding: 15px 25px; border-radius: 12px; border: 1px solid #334155; }
         .logo { font-size: 20px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
         .badge { background: #0284c7; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; }
+        .conn-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .conn-online { background: #16a34a; color: white; }
+        .conn-offline { background: #dc2626; color: white; }
         
         .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .btn-export { background: #10b981; color: #000; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; }
@@ -49,7 +52,7 @@
 
     <div class="header">
         <div class="logo">🏨 Dibbi Vault <span class="badge">HOTEL LEGAL MODE</span></div>
-        <div style="font-size: 13px; color: #94a3b8;">Auto-Purge (5 Min File Purge) + Legal Audit Log Active</div>
+        <div id="connBadge" class="conn-badge conn-offline">🔴 Disconnected</div>
     </div>
 
     <div class="action-bar">
@@ -62,7 +65,7 @@
             <h3>Hotel Guest Check-In</h3>
             <p>Paperless ID Inspection</p>
             <div id="qrcode"></div>
-            <p style="margin-top: 15px; font-size: 11px; color: #94a3b8;" id="room-info">Connecting...</p>
+            <p style="margin-top: 15px; font-size: 11px; color: #94a3b8;" id="room-info">Terminal ID: counter_jaipur_01</p>
         </div>
 
         <div class="table-card">
@@ -98,18 +101,26 @@
         const uploadURL = `${window.location.origin}/upload.html?room=${roomId}`;
         let tokenCounter = 101;
         
-        // Permanent Audit Log Register Array (For Police & Legal Compliance)
         const auditLogRegister = [];
-        
-        // Active file memory store
         const activeFiles = {};
+
+        const connBadge = document.getElementById('connBadge');
+
+        // Socket connection hone par room join karwana
+        socket.on('connect', () => {
+            connBadge.className = "conn-badge conn-online";
+            connBadge.innerText = "🟢 Connected (Terminal #1)";
+            socket.emit('join-room', roomId);
+        });
+
+        socket.on('disconnect', () => {
+            connBadge.className = "conn-badge conn-offline";
+            connBadge.innerText = "🔴 Server Disconnected...";
+        });
 
         QRCode.toCanvas(document.createElement('canvas'), uploadURL, (err, canvas) => {
             document.getElementById('qrcode').appendChild(canvas);
         });
-
-        document.getElementById('room-info').innerText = `Terminal ID: ${roomId}`;
-        socket.emit('join-room', roomId);
 
         function playAlertSound() {
             try {
@@ -135,10 +146,8 @@
             const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
             const fullTimeStamp = `${dateStr} ${timeStr}`;
 
-            // Save File Data temporarily in RAM
             activeFiles[token] = data.fileData;
 
-            // Save Legal Audit Record (Metadata only - No image/file data)
             auditLogRegister.push({
                 date: dateStr,
                 time: timeStr,
@@ -165,7 +174,6 @@
             `;
             tbody.prepend(row);
 
-            // ⏱️ Auto-Purge Timer (5 Minutes = 300,000 ms)
             setTimeout(() => {
                 purgeDocument(token);
             }, 300000);
@@ -207,16 +215,14 @@
             });
         }
 
-        // Auto-Purge Functionality: Memory se Image delete karna
         function purgeDocument(token) {
-            delete activeFiles[token]; // RAM se File Data remove
-            
+            delete activeFiles[token];
             const statusTag = document.getElementById(`status-${token}`);
             const viewBtn = document.getElementById(`view-btn-${token}`);
             
             if (statusTag) {
                 statusTag.className = "status-badge status-purged";
-                statusTag.innerText = "File Auto-Purged (Purged from RAM)";
+                statusTag.innerText = "File Auto-Purged";
             }
             if (viewBtn) {
                 viewBtn.disabled = true;
@@ -225,7 +231,6 @@
             }
         }
 
-        // Police / Legal Audit Export (Generates CSV Register)
         function exportAuditLogCSV() {
             if (auditLogRegister.length === 0) {
                 alert("No check-in entries logged today yet.");
