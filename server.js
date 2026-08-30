@@ -13,15 +13,26 @@ const io = new Server(server, {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
+// Persistent State across Laptop Refreshes
+let activeDocuments = {};
+let tokenCounter = 101;
 
-    // Global Direct Broadcast (No Room Bug)
+io.on('connection', (socket) => {
+    // Send all existing records on reconnect/refresh
+    socket.emit('load-initial-data', activeDocuments);
+
     socket.on('send-document', (data) => {
-        io.emit('receive-document', data);
+        const token = tokenCounter++;
+        const record = { ...data, token: token, createdAt: new Date().toISOString() };
+        activeDocuments[token] = record;
+        io.emit('receive-document', record);
     });
 
     socket.on('verify-token-send', (data) => {
+        if (activeDocuments[data.token]) {
+            activeDocuments[data.token].isVerified = true;
+            activeDocuments[data.token].verifiedTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        }
         io.emit('document-verified-reply', data);
     });
 });
