@@ -3,64 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dibbi Secure Upload</title>
+    <title>Dibbi Paperless Vault</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background: #0f172a; color: white; padding: 25px 20px; }
-        .card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
-        h2 { color: #38bdf8; margin-bottom: 5px; }
-        p { color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
-        label { font-size: 13px; color: #cbd5e1; display: block; margin-top: 15px; margin-bottom: 5px; }
-        select, input[type="file"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 14px; }
-        .btn { background: #0284c7; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 8px; width: 100%; margin-top: 25px; }
-        .status { margin-top: 15px; text-align: center; color: #4ade80; font-weight: bold; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0f172a; color: #f8fafc; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: #1e293b; padding: 25px; border-radius: 16px; border: 1px solid #334155; width: 100%; max-width: 400px; text-align: center; }
+        .logo { font-size: 20px; font-weight: bold; color: #38bdf8; margin-bottom: 5px; }
+        .subtitle { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        label { font-size: 12px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px; }
+        select, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #475569; border-radius: 8px; font-size: 14px; background: #0f172a; color: white; }
+        .btn-submit { width: 100%; background: #0284c7; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; }
+        
+        .token-card { display: none; margin-top: 20px; background: #064e3b; border: 1px solid #10b981; padding: 15px; border-radius: 12px; }
+        .token-number { font-size: 28px; font-weight: bold; color: #34d399; margin: 5px 0; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>Dibbi Secure Vault</h2>
-        <p>Send document directly to counter screen</p>
+        <div class="logo">🍃 Dibbi Paperless Vault</div>
+        <div class="subtitle">Direct Digital Verification • Zero Paper</div>
+        
+        <form id="uploadForm">
+            <div class="form-group">
+                <label>Document Type</label>
+                <select id="docType" required>
+                    <option value="Aadhaar Card">Aadhaar Card</option>
+                    <option value="PAN Card">PAN Card</option>
+                    <option value="Marksheet">Marksheet</option>
+                    <option value="Photo / Signature">Photo / Signature</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Select File / Image</label>
+                <input type="file" id="fileInput" required>
+            </div>
 
-        <label>Document Category</label>
-        <select id="docType">
-            <option value="Aadhaar Card">Aadhaar Card</option>
-            <option value="PAN Card">PAN Card</option>
-            <option value="Photo / Marksheet">Photo / Marksheet</option>
-            <option value="Other Document">Other Document</option>
-        </select>
+            <button type="submit" class="btn-submit" id="submitBtn">Send for Inspection 🚀</button>
+        </form>
 
-        <label>Select File</label>
-        <input type="file" id="fileInput">
-
-        <button class="btn" onclick="sendFile()">Approve & Share 🚀</button>
-        <div class="status" id="msg"></div>
+        <div class="token-card" id="tokenBox">
+            <div style="font-size: 12px; color: #a7f3d0;">STATUS: VERIFIED PAPERLESS</div>
+            <div class="token-number" id="tokenNo">TOKEN #101</div>
+            <div style="font-size: 11px; color: #6ee7b7;">Paperless Pass Issued by Counter #1</div>
+        </div>
     </div>
 
     <script>
         const socket = io();
         const urlParams = new URLSearchParams(window.location.search);
-        const roomId = urlParams.get('room');
+        const roomId = urlParams.get('room') || 'counter_jaipur_01';
 
-        function sendFile() {
-            const file = document.getElementById('fileInput').files[0];
+        socket.emit('join-room', roomId);
+
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('fileInput');
             const docType = document.getElementById('docType').value;
-            if (!file) return alert("Pehle file select karein!");
+            const submitBtn = document.getElementById('submitBtn');
 
-            document.getElementById('msg').innerText = "Sending...";
+            if (!fileInput.files.length) return;
 
+            const file = fileInput.files[0];
             const reader = new FileReader();
-            reader.onload = function(e) {
+
+            submitBtn.innerText = "Sending to Screen...";
+            submitBtn.disabled = true;
+
+            reader.onload = function(evt) {
                 socket.emit('send-document', {
                     roomId: roomId,
                     docType: docType,
                     fileName: file.name,
-                    fileData: e.target.result
+                    fileData: evt.target.result
                 });
-                document.getElementById('msg').innerText = "✅ Sent to Counter Screen!";
+                submitBtn.innerText = "Waiting for Counter Approval...";
             };
+
             reader.readAsDataURL(file);
-        }
+        });
+
+        // Listen for Counter Verification (Digital Receipt)
+        socket.on('document-verified-reply', (data) => {
+            document.getElementById('tokenBox').style.display = 'block';
+            document.getElementById('tokenNo').innerText = `TOKEN #${data.token}`;
+            document.getElementById('submitBtn').innerText = "✓ Document Approved!";
+        });
     </script>
 </body>
 </html>
