@@ -3,20 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dibbi Paperless Vault - Digital Verification</title>
+    <title>Dibbi Paperless Vault - Hotel Legal & Privacy Mode</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #0f172a; padding: 20px; color: #f8fafc; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #1e293b; padding: 15px 25px; border-radius: 12px; border: 1px solid #334155; }
-        .logo { font-size: 22px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
-        .badge { background: #22c55e; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+        .logo { font-size: 20px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+        .badge { background: #0284c7; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; }
         
-        .main-container { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+        .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .btn-export { background: #10b981; color: #000; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; }
+        .btn-export:hover { background: #059669; color: white; }
+
+        .main-container { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
         .qr-card { background: #1e293b; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
         .qr-card h3 { margin-bottom: 5px; color: #f8fafc; }
-        .qr-card p { font-size: 13px; color: #94a3b8; margin-bottom: 15px; }
+        .qr-card p { font-size: 12px; color: #94a3b8; margin-bottom: 15px; }
         #qrcode { background: white; padding: 10px; border-radius: 8px; display: inline-block; }
         
         .table-card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
@@ -24,47 +28,53 @@
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #334155; font-size: 13px; }
         th { background: #0f172a; color: #94a3b8; font-weight: 600; }
         
-        .doc-badge { background: #0284c7; color: white; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; }
-        .time-badge { background: #334155; color: #cbd5e1; padding: 4px 8px; border-radius: 6px; font-size: 11px; }
-        .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .doc-badge { background: #0284c7; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; }
+        .time-badge { background: #334155; color: #cbd5e1; padding: 3px 8px; border-radius: 6px; font-size: 11px; }
+        .status-badge { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
         .status-pending { background: #f59e0b; color: #000; }
         .status-verified { background: #22c55e; color: #000; }
-        
+        .status-purged { background: #ef4444; color: #fff; }
+
         .btn-view { background: #38bdf8; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-right: 5px; }
         .btn-verify { background: #22c55e; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; }
         
         /* Modal Viewer */
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
-        .modal-content { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 800px; width: 90%; text-align: center; border: 1px solid #475569; position: relative; }
-        .modal-content img, .modal-content iframe { max-width: 100%; max-height: 70vh; border-radius: 8px; margin-top: 10px; }
+        .modal-content { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 700px; width: 90%; text-align: center; border: 1px solid #475569; position: relative; }
+        .modal-content img, .modal-content iframe { max-width: 100%; max-height: 65vh; border-radius: 8px; margin-top: 10px; }
         .close-btn { position: absolute; right: 15px; top: 15px; color: #fff; font-size: 20px; cursor: pointer; background: #334155; width: 30px; height: 30px; border-radius: 50%; line-height: 30px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">🍃 Dibbi Paperless Counter <span class="badge">• ZERO PAPER</span></div>
-        <div style="font-size: 14px; color: #94a3b8;">Counter Verification Terminal #1</div>
+        <div class="logo">🏨 Dibbi Vault <span class="badge">HOTEL LEGAL MODE</span></div>
+        <div style="font-size: 13px; color: #94a3b8;">Auto-Purge (5 Min File Purge) + Legal Audit Log Active</div>
+    </div>
+
+    <div class="action-bar">
+        <h3 style="font-size: 16px;">Live Verification Queue</h3>
+        <button onclick="exportAuditLogCSV()" class="btn-export">📄 Export Police Audit Register (CSV)</button>
     </div>
 
     <div class="main-container">
         <div class="qr-card">
-            <h3>Scan for Paperless Share</h3>
-            <p>Digital Inspection & Verification</p>
+            <h3>Hotel Guest Check-In</h3>
+            <p>Paperless ID Inspection</p>
             <div id="qrcode"></div>
             <p style="margin-top: 15px; font-size: 11px; color: #94a3b8;" id="room-info">Connecting...</p>
         </div>
 
         <div class="table-card">
-            <h3 style="margin-bottom: 15px;">Live Verification Queue</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>Time</th>
-                        <th>Document</th>
+                        <th>Date & Time</th>
+                        <th>Token</th>
+                        <th>Doc Type</th>
                         <th>File Name</th>
-                        <th>Verification Status</th>
-                        <th>Digital Actions</th>
+                        <th>Privacy / Legal Status</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="doc-list">
@@ -87,12 +97,18 @@
         const roomId = "counter_jaipur_01"; 
         const uploadURL = `${window.location.origin}/upload.html?room=${roomId}`;
         let tokenCounter = 101;
+        
+        // Permanent Audit Log Register Array (For Police & Legal Compliance)
+        const auditLogRegister = [];
+        
+        // Active file memory store
+        const activeFiles = {};
 
         QRCode.toCanvas(document.createElement('canvas'), uploadURL, (err, canvas) => {
             document.getElementById('qrcode').appendChild(canvas);
         });
 
-        document.getElementById('room-info').innerText = `Counter ID: ${roomId}`;
+        document.getElementById('room-info').innerText = `Terminal ID: ${roomId}`;
         socket.emit('join-room', roomId);
 
         function playAlertSound() {
@@ -116,31 +132,57 @@
             const token = tokenCounter++;
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+            const fullTimeStamp = `${dateStr} ${timeStr}`;
+
+            // Save File Data temporarily in RAM
+            activeFiles[token] = data.fileData;
+
+            // Save Legal Audit Record (Metadata only - No image/file data)
+            auditLogRegister.push({
+                date: dateStr,
+                time: timeStr,
+                token: token,
+                docType: data.docType || 'Document',
+                fileName: data.fileName,
+                status: 'Verified at Reception'
+            });
 
             const tbody = document.getElementById('doc-list');
             const row = document.createElement('tr');
             row.id = `row-${token}`;
             
             row.innerHTML = `
-                <td><span class="time-badge">${timeStr}</span></td>
+                <td><span class="time-badge">${fullTimeStamp}</span></td>
+                <td><b>#${token}</b></td>
                 <td><span class="doc-badge">${data.docType || 'Document'}</span></td>
                 <td><b>${data.fileName}</b></td>
-                <td><span class="status-badge status-pending" id="status-${token}">Pending Check</span></td>
-                <td>
-                    <button onclick="inspectDoc('${data.fileData}', '${data.fileName}')" class="btn-view">👁️ Inspect</button>
-                    <button onclick="verifyDoc('${token}')" class="btn-verify" id="btn-${token}">✓ Approve & Token</button>
+                <td><span class="status-badge status-pending" id="status-${token}">Active (Auto-Delete in 5m)</span></td>
+                <td id="action-cell-${token}">
+                    <button onclick="inspectDoc('${token}', '${data.fileName}')" class="btn-view" id="view-btn-${token}">👁️ Inspect</button>
+                    <button onclick="verifyDoc('${token}')" class="btn-verify" id="btn-${token}">✓ Verify Guest</button>
                 </td>
             `;
             tbody.prepend(row);
+
+            // ⏱️ Auto-Purge Timer (5 Minutes = 300,000 ms)
+            setTimeout(() => {
+                purgeDocument(token);
+            }, 300000);
         });
 
-        function inspectDoc(fileData, fileName) {
+        function inspectDoc(token, fileName) {
+            const fileData = activeFiles[token];
+            if (!fileData) {
+                alert("This file has been auto-purged for guest data privacy.");
+                return;
+            }
             const container = document.getElementById('mediaContainer');
             document.getElementById('modalTitle').innerText = fileName;
             if(fileData.startsWith('data:image')) {
                 container.innerHTML = `<img src="${fileData}" />`;
             } else {
-                container.innerHTML = `<iframe src="${fileData}" width="100%" height="500px"></iframe>`;
+                container.innerHTML = `<iframe src="${fileData}" width="100%" height="450px"></iframe>`;
             }
             document.getElementById('viewerModal').style.display = 'flex';
         }
@@ -154,16 +196,55 @@
             const btn = document.getElementById(`btn-${token}`);
             
             statusTag.className = "status-badge status-verified";
-            statusTag.innerText = `Verified (Token #${token})`;
+            statusTag.innerText = `Verified & Logged`;
             btn.disabled = true;
             btn.style.opacity = "0.5";
 
-            // Customer Ke Phone Par Instant Digital Token Bhejna
             socket.emit('verify-token-send', {
                 roomId: roomId,
                 token: token,
                 msg: "Document Verified Paperlessly!"
             });
+        }
+
+        // Auto-Purge Functionality: Memory se Image delete karna
+        function purgeDocument(token) {
+            delete activeFiles[token]; // RAM se File Data remove
+            
+            const statusTag = document.getElementById(`status-${token}`);
+            const viewBtn = document.getElementById(`view-btn-${token}`);
+            
+            if (statusTag) {
+                statusTag.className = "status-badge status-purged";
+                statusTag.innerText = "File Auto-Purged (Purged from RAM)";
+            }
+            if (viewBtn) {
+                viewBtn.disabled = true;
+                viewBtn.style.opacity = "0.4";
+                viewBtn.innerText = "🔒 Purged";
+            }
+        }
+
+        // Police / Legal Audit Export (Generates CSV Register)
+        function exportAuditLogCSV() {
+            if (auditLogRegister.length === 0) {
+                alert("No check-in entries logged today yet.");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,Date,Time,Token_ID,Document_Type,File_Name,Verification_Status\n";
+
+            auditLogRegister.forEach(row => {
+                csvContent += `${row.date},${row.time},#${row.token},"${row.docType}","${row.fileName}",${row.status}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Hotel_Guest_Police_Audit_Register_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
