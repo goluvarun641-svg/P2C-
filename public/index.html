@@ -27,7 +27,7 @@
         
         .table-card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #334155; font-size: 13px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #334155; font-size: 13px; vertical-align: middle; }
         th { background: #0f172a; color: #94a3b8; font-weight: 600; }
         
         .doc-badge { background: #0284c7; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; }
@@ -40,21 +40,21 @@
         .btn-view { background: #38bdf8; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-right: 5px; }
         .btn-verify { background: #22c55e; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; }
         
-        /* Modal Viewer & Digital Stamp Style */
+        /* Modal & Digital Stamp Style */
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
         .modal-content { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 750px; width: 90%; text-align: center; border: 1px solid #475569; position: relative; }
         .viewer-box { position: relative; display: inline-block; margin-top: 10px; max-width: 100%; }
-        .viewer-box img { max-width: 100%; max-height: 55vh; border-radius: 8px; }
+        .viewer-box img { max-width: 100%; max-height: 50vh; border-radius: 8px; }
 
-        /* Official Green Digital Stamp Badge Overlay */
         .digital-stamp {
-            position: absolute; top: 15px; right: 15px; border: 3px dashed #22c55e; background: rgba(6, 78, 59, 0.85);
+            position: absolute; top: 15px; right: 15px; border: 3px dashed #22c55e; background: rgba(6, 78, 59, 0.9);
             color: #4ade80; padding: 8px 15px; border-radius: 8px; transform: rotate(-8deg); text-align: center;
             font-family: monospace; font-size: 11px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: none;
         }
 
-        .sig-preview-box { margin-top: 10px; background: #0f172a; padding: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #334155; }
+        .sig-preview-box { margin-top: 15px; background: #0f172a; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #334155; }
         .close-btn { position: absolute; right: 15px; top: 15px; color: #fff; font-size: 20px; cursor: pointer; background: #334155; width: 30px; height: 30px; border-radius: 50%; line-height: 30px; }
+        .sig-thumb { height: 38px; border-radius: 4px; border: 1px solid #94a3b8; background: white; padding: 2px; }
     </style>
 </head>
 <body>
@@ -84,7 +84,7 @@
                         <th>Date & Time</th>
                         <th>Token</th>
                         <th>Doc Type</th>
-                        <th>File Name</th>
+                        <th>Guest Signature</th>
                         <th>Privacy / Legal Status</th>
                         <th>Action</th>
                     </tr>
@@ -95,7 +95,7 @@
         </div>
     </div>
 
-    <!-- Viewer Modal with Digital Stamp -->
+    <!-- Viewer Modal -->
     <div class="modal" id="viewerModal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
@@ -112,8 +112,8 @@
             </div>
 
             <div class="sig-preview-box">
-                <span style="font-size: 12px; color: #94a3b8;">Guest E-Signature:</span>
-                <img id="sigImage" style="height: 40px; background: white; padding: 3px; border-radius: 4px;" src="" />
+                <span style="font-size: 13px; color: #cbd5e1; font-weight: bold;">Guest E-Signature:</span>
+                <img id="sigImage" style="height: 50px; background: white; padding: 4px; border-radius: 6px; border: 1px solid #38bdf8;" src="" />
             </div>
         </div>
     </div>
@@ -170,7 +170,9 @@
                 <td><span class="time-badge">${fullTimeStamp}</span></td>
                 <td><b>#${token}</b></td>
                 <td><span class="doc-badge">${data.docType || 'Document'}</span></td>
-                <td><b>${data.fileName}</b></td>
+                <td>
+                    ${data.signatureData ? `<img src="${data.signatureData}" class="sig-thumb" />` : '<span style="color:#64748b;">No Sig</span>'}
+                </td>
                 <td><span class="status-badge status-pending" id="status-${token}">Active (Auto-Delete in 5m)</span></td>
                 <td id="action-cell-${token}">
                     <button onclick="inspectDoc('${token}')" class="btn-view" id="view-btn-${token}">👁️ Inspect</button>
@@ -195,7 +197,7 @@
             if(data.fileData.startsWith('data:image')) {
                 container.innerHTML = `<img src="${data.fileData}" />`;
             } else {
-                container.innerHTML = `<iframe src="${data.fileData}" width="100%" height="400px"></iframe>`;
+                container.innerHTML = `<iframe src="${data.fileData}" width="100%" height="380px"></iframe>`;
             }
 
             document.getElementById('sigImage').src = data.signatureData || '';
