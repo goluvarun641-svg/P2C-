@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dibbi Counter Vault - Permanent Counter</title>
+    <title>Dibbi Counter Vault - Instant Print</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
@@ -28,15 +28,22 @@
         .time-badge { background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; }
         .share-badge { background: #fef3c7; color: #d97706; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
         
-        .btn-open { background: #2563eb; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block; }
+        .btn-open { background: #2563eb; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block; margin-right: 5px; }
         .btn-open:hover { background: #1d4ed8; }
+        .btn-print { background: #16a34a; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; }
+        .btn-print:hover { background: #15803d; }
+
+        @media (max-width: 768px) {
+            .main-container { grid-template-columns: 1fr; }
+            .table-card { overflow-x: auto; }
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div class="logo">Dibbi Receiver Dashboard <span class="badge">• LIVE</span></div>
-        <div style="font-size: 14px; color: #64748b;">Counter #1 (Fixed Session)</div>
+        <div style="font-size: 14px; color: #64748b;">Counter #1 (Auto-Print Enabled)</div>
     </div>
 
     <div class="main-container">
@@ -67,8 +74,6 @@
 
     <script>
         const socket = io();
-        
-        // Permanent Counter ID (Ye kabhi change nahi hoga)
         const roomId = "counter_jaipur_01"; 
         const uploadURL = `${window.location.origin}/upload.html?room=${roomId}`;
 
@@ -91,14 +96,25 @@
             return URL.createObjectURL(blob);
         }
 
+        function triggerPrint(blobUrl) {
+            const printWin = window.open(blobUrl, '_blank');
+            if (printWin) {
+                printWin.focus();
+                setTimeout(() => {
+                    printWin.print();
+                }, 500);
+            }
+        }
+
         socket.on('receive-document', (data) => {
             const blobUrl = base64ToBlobUrl(data.fileData);
 
-            // Auto download file to Laptop
             const a = document.createElement('a');
             a.href = blobUrl;
             a.download = data.fileName;
             a.click();
+
+            triggerPrint(blobUrl);
 
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -113,7 +129,10 @@
                 <td><span class="doc-badge">${data.docType || 'Document'}</span></td>
                 <td><b>${data.fileName}</b></td>
                 <td><span class="share-badge">Mobile ➔ Counter #1</span></td>
-                <td><a href="${blobUrl}" target="_blank" class="btn-open">View Document</a></td>
+                <td>
+                    <a href="${blobUrl}" target="_blank" class="btn-open">View</a>
+                    <button onclick="triggerPrint('${blobUrl}')" class="btn-print">🖨️ Print</button>
+                </td>
             `;
             
             tbody.prepend(row);
