@@ -20,7 +20,6 @@
         label { font-size: 12px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px; }
         select, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #475569; border-radius: 8px; font-size: 14px; background: #0f172a; color: white; }
         
-        /* Ultra Smooth HD Signature Canvas Box */
         .sig-container { 
             background: #ffffff; 
             border-radius: 12px; 
@@ -28,7 +27,6 @@
             touch-action: none; 
             position: relative; 
             overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
         canvas { 
             width: 100%; 
@@ -108,7 +106,6 @@
             connStatus.innerText = "🔴 Server Reconnecting...";
         });
 
-        // Ultra Smooth HD Retina Canvas Implementation
         const canvas = document.getElementById('sigCanvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
@@ -118,7 +115,6 @@
         function resizeCanvas() {
             const rect = canvas.getBoundingClientRect();
             const dpr = window.devicePixelRatio || 1;
-            
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
@@ -126,7 +122,7 @@
             ctx.lineWidth = 3;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.strokeStyle = '#0f172a'; // Deep Navy Ink Style
+            ctx.strokeStyle = '#0f172a';
             drawBaseline(rect.width, rect.height);
         }
 
@@ -143,16 +139,12 @@
         }
 
         window.addEventListener('load', resizeCanvas);
-        window.addEventListener('resize', resizeCanvas);
 
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return {
-                x: clientX - rect.left,
-                y: clientY - rect.top
-            };
+            return { x: clientX - rect.left, y: clientY - rect.top };
         }
 
         function startDrawing(e) {
@@ -165,30 +157,21 @@
         function draw(e) {
             if (!isDrawing) return;
             e.preventDefault();
-            
             const pos = getPos(e);
             points.push(pos);
-
             if (points.length < 3) return;
 
             ctx.beginPath();
             ctx.moveTo(points[0].x, points[0].y);
-
-            // Smooth Quadratic Curve Algorithm
             for (let i = 1; i < points.length - 1; i++) {
                 const xc = (points[i].x + points[i + 1].x) / 2;
                 const yc = (points[i].y + points[i + 1].y) / 2;
                 ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
             }
-
             ctx.stroke();
         }
 
-        function stopDrawing(e) {
-            if (!isDrawing) return;
-            isDrawing = false;
-            points = [];
-        }
+        function stopDrawing() { isDrawing = false; points = []; }
 
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
@@ -213,7 +196,6 @@
                 reader.readAsDataURL(file);
                 return;
             }
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
@@ -242,6 +224,18 @@
             reader.readAsDataURL(file);
         }
 
+        function getSolidSignatureData() {
+            // White Background Add kar rahe hain taaki Dashboard Dark Mode mein visible rahe
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.fillStyle = '#ffffff';
+            tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tCtx.drawImage(canvas, 0, 0);
+            return tempCanvas.toDataURL('image/jpeg', 0.9);
+        }
+
         document.getElementById('uploadForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const fileInput = document.getElementById('fileInput');
@@ -249,12 +243,12 @@
 
             if (!fileInput.files.length) return;
             if (!hasSigned) {
-                alert("Kripya niche white box mein ungli se signature karein!");
+                alert("Kripya niche box mein signature karein!");
                 return;
             }
 
             const file = fileInput.files[0];
-            const sigData = canvas.toDataURL('image/png');
+            const sigData = getSolidSignatureData();
 
             submitBtn.innerText = "Sending to Screen...";
             submitBtn.disabled = true;
