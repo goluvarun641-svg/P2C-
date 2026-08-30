@@ -19,6 +19,12 @@
         .form-group { text-align: left; margin-bottom: 15px; }
         label { font-size: 12px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px; }
         select, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #475569; border-radius: 8px; font-size: 14px; background: #0f172a; color: white; }
+        
+        /* Signature Canvas Box */
+        .sig-container { background: #ffffff; border-radius: 8px; border: 2px dashed #38bdf8; touch-action: none; position: relative; }
+        canvas { width: 100%; height: 120px; display: block; border-radius: 8px; cursor: crosshair; }
+        .clear-btn { background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; position: absolute; right: 5px; top: 5px; }
+
         .btn-submit { width: 100%; background: #0284c7; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; }
         
         .token-card { display: none; margin-top: 20px; background: #064e3b; border: 1px solid #10b981; padding: 15px; border-radius: 12px; }
@@ -44,11 +50,19 @@
             </div>
             
             <div class="form-group">
-                <label>Select File / Image</label>
+                <label>Select ID / Document File</label>
                 <input type="file" id="fileInput" accept="image/*,application/pdf" required>
             </div>
 
-            <button type="submit" class="btn-submit" id="submitBtn">Send for Inspection 🚀</button>
+            <div class="form-group">
+                <label>Guest Digital Signature (Sign Below with Finger)</label>
+                <div class="sig-container">
+                    <button type="button" class="clear-btn" onclick="clearSignature()">Clear</button>
+                    <canvas id="sigCanvas"></canvas>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">Send & Verify Paperlessly 🚀</button>
         </form>
 
         <div class="token-card" id="tokenBox">
@@ -77,7 +91,58 @@
             connStatus.innerText = "🔴 Server Reconnecting...";
         });
 
-        // Fast Client-Side Image Compressor
+        // E-Sign Canvas Logic
+        const canvas = document.getElementById('sigCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let hasSigned = false;
+
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#0284c7';
+        }
+        window.addEventListener('load', resizeCanvas);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            hasSigned = true;
+            draw(e);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            ctx.lineTo(clientX - rect.left, clientY - rect.top);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(clientX - rect.left, clientY - rect.top);
+        }
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasSigned = false;
+        }
+
         function compressImage(file, callback) {
             if (!file.type.startsWith('image/')) {
                 const reader = new FileReader();
@@ -90,7 +155,7 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    const canvas = document.createElement('canvas');
+                    const canvasImg = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
                     const maxDim = 1200;
@@ -103,13 +168,11 @@
                         height = maxDim;
                     }
 
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                    callback(compressedDataUrl);
+                    canvasImg.width = width;
+                    canvasImg.height = height;
+                    const ctxImg = canvasImg.getContext('2d');
+                    ctxImg.drawImage(img, 0, 0, width, height);
+                    callback(canvasImg.toDataURL('image/jpeg', 0.7));
                 };
                 img.src = e.target.result;
             };
@@ -122,8 +185,13 @@
             const docType = document.getElementById('docType').value;
 
             if (!fileInput.files.length) return;
+            if (!hasSigned) {
+                alert("Kripya nache box mein ungli se apna signature karein!");
+                return;
+            }
 
             const file = fileInput.files[0];
+            const sigData = canvas.toDataURL(); // Canvas signature to Base64 image
 
             submitBtn.innerText = "Sending to Screen...";
             submitBtn.disabled = true;
@@ -133,7 +201,8 @@
                     roomId: roomId,
                     docType: docType,
                     fileName: file.name,
-                    fileData: compressedBase64
+                    fileData: compressedBase64,
+                    signatureData: sigData
                 });
                 submitBtn.innerText = "Waiting for Counter Approval...";
             });
