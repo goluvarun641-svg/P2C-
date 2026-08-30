@@ -5,7 +5,12 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+
+// maxHttpBufferSize 100MB set kiya hai taaki HD Photos/PDFs drop na hon
+const io = new Server(server, { 
+    cors: { origin: "*" },
+    maxHttpBufferSize: 1e8 
+});
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -15,11 +20,9 @@ io.on('connection', (socket) => {
     });
 
     socket.on('send-document', (data) => {
-        // Document direct laptop ko stream/pipe ho jayega (Zero Cloud Storage)
         io.to(data.roomId).emit('receive-document', data);
     });
 
-    // Digital Token Verification Event
     socket.on('verify-token-send', (data) => {
         io.to(data.roomId).emit('document-verified-reply', data);
     });
