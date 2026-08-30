@@ -10,7 +10,12 @@
         body { background: #0f172a; color: #f8fafc; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .card { background: #1e293b; padding: 25px; border-radius: 16px; border: 1px solid #334155; width: 100%; max-width: 400px; text-align: center; }
         .logo { font-size: 20px; font-weight: bold; color: #38bdf8; margin-bottom: 5px; }
-        .subtitle { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+        .subtitle { font-size: 12px; color: #94a3b8; margin-bottom: 15px; }
+        
+        .status-indicator { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 15px; }
+        .status-online { background: #16a34a; color: white; }
+        .status-offline { background: #dc2626; color: white; }
+        
         .form-group { text-align: left; margin-bottom: 15px; }
         label { font-size: 12px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px; }
         select, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #475569; border-radius: 8px; font-size: 14px; background: #0f172a; color: white; }
@@ -25,6 +30,8 @@
         <div class="logo">🍃 Dibbi Paperless Vault</div>
         <div class="subtitle">Direct Digital Verification • Zero Paper</div>
         
+        <div id="connStatus" class="status-indicator status-offline">Connecting to Server...</div>
+
         <form id="uploadForm">
             <div class="form-group">
                 <label>Document Type</label>
@@ -38,7 +45,7 @@
             
             <div class="form-group">
                 <label>Select File / Image</label>
-                <input type="file" id="fileInput" required>
+                <input type="file" id="fileInput" accept="image/*,application/pdf" required>
             </div>
 
             <button type="submit" class="btn-submit" id="submitBtn">Send for Inspection 🚀</button>
@@ -56,40 +63,86 @@
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room') || 'counter_jaipur_01';
 
-        socket.emit('join-room', roomId);
+        const connStatus = document.getElementById('connStatus');
+        const submitBtn = document.getElementById('submitBtn');
+
+        socket.on('connect', () => {
+            connStatus.className = "status-indicator status-online";
+            connStatus.innerText = "🟢 Connected to Counter #1";
+            socket.emit('join-room', roomId);
+        });
+
+        socket.on('disconnect', () => {
+            connStatus.className = "status-indicator status-offline";
+            connStatus.innerText = "🔴 Server Reconnecting...";
+        });
+
+        // Fast Client-Side Image Compressor
+        function compressImage(file, callback) {
+            if (!file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = e => callback(e.target.result);
+                reader.readAsDataURL(file);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 1200;
+
+                    if (width > height && width > maxDim) {
+                        height *= maxDim / width;
+                        width = maxDim;
+                    } else if (height > maxDim) {
+                        width *= maxDim / height;
+                        height = maxDim;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    callback(compressedDataUrl);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
 
         document.getElementById('uploadForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const fileInput = document.getElementById('fileInput');
             const docType = document.getElementById('docType').value;
-            const submitBtn = document.getElementById('submitBtn');
 
             if (!fileInput.files.length) return;
 
             const file = fileInput.files[0];
-            const reader = new FileReader();
 
             submitBtn.innerText = "Sending to Screen...";
             submitBtn.disabled = true;
 
-            reader.onload = function(evt) {
+            compressImage(file, function(compressedBase64) {
                 socket.emit('send-document', {
                     roomId: roomId,
                     docType: docType,
                     fileName: file.name,
-                    fileData: evt.target.result
+                    fileData: compressedBase64
                 });
                 submitBtn.innerText = "Waiting for Counter Approval...";
-            };
-
-            reader.readAsDataURL(file);
+            });
         });
 
-        // Listen for Counter Verification (Digital Receipt)
         socket.on('document-verified-reply', (data) => {
             document.getElementById('tokenBox').style.display = 'block';
             document.getElementById('tokenNo').innerText = `TOKEN #${data.token}`;
-            document.getElementById('submitBtn').innerText = "✓ Document Approved!";
+            submitBtn.innerText = "✓ Document Approved!";
         });
     </script>
 </body>
