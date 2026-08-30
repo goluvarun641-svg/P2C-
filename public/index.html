@@ -3,117 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dibbi Paperless Vault - Hotel Legal & Privacy Mode</title>
+    <title>Dibbi Vault - Hotel Desk Console</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #0f172a; padding: 20px; color: #f8fafc; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #1e293b; padding: 15px 25px; border-radius: 12px; border: 1px solid #334155; }
-        .logo { font-size: 20px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
-        .badge { background: #0284c7; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; }
+        body { background-color: #0f172a; padding: 15px; color: #f8fafc; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #1e293b; padding: 12px 20px; border-radius: 12px; border: 1px solid #334155; }
+        .logo { font-size: 18px; font-weight: bold; color: #38bdf8; }
         .conn-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
         .conn-online { background: #16a34a; color: white; }
-        .conn-offline { background: #dc2626; color: white; }
         
-        .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .btn-export { background: #10b981; color: #000; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; }
+        .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; }
+        .search-box { flex: 1; max-width: 400px; padding: 8px 12px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 13px; }
+        .btn-export { background: #10b981; color: #000; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 12px; border: none; cursor: pointer; }
 
-        .main-container { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
-        .qr-card { background: #1e293b; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
-        .qr-card h3 { margin-bottom: 5px; color: #f8fafc; }
-        .qr-card p { font-size: 12px; color: #94a3b8; margin-bottom: 15px; }
-        #qrcode { background: white; padding: 10px; border-radius: 8px; display: inline-block; }
+        .main-container { display: grid; grid-template-columns: 280px 1fr; gap: 15px; }
+        .qr-card { background: #1e293b; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
+        #qrcode { background: white; padding: 8px; border-radius: 8px; display: inline-block; margin-top: 10px; }
         
-        .table-card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #334155; font-size: 13px; vertical-align: middle; }
-        th { background: #0f172a; color: #94a3b8; font-weight: 600; }
+        .table-card { background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #334155; font-size: 12px; vertical-align: middle; }
+        th { background: #0f172a; color: #94a3b8; }
         
-        .doc-badge { background: #0284c7; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; }
-        .time-badge { background: #334155; color: #cbd5e1; padding: 3px 8px; border-radius: 6px; font-size: 11px; }
-        .status-badge { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .doc-badge { background: #0284c7; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+        .status-badge { padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
         .status-pending { background: #f59e0b; color: #000; }
         .status-verified { background: #22c55e; color: #000; }
-        .status-purged { background: #ef4444; color: #fff; }
 
-        .btn-view { background: #38bdf8; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-right: 5px; }
-        .btn-verify { background: #22c55e; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; }
-        
-        /* Modal & Digital Stamp Style */
+        .btn-view { background: #38bdf8; color: #0f172a; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; }
+        .btn-verify { background: #22c55e; color: #0f172a; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; }
+        .sig-thumb { height: 32px; background: white; padding: 2px; border-radius: 4px; }
+
+        /* Modal View */
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
-        .modal-content { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 750px; width: 90%; text-align: center; border: 1px solid #475569; position: relative; }
-        .viewer-box { position: relative; display: inline-block; margin-top: 10px; max-width: 100%; }
-        .viewer-box img { max-width: 100%; max-height: 50vh; border-radius: 8px; }
-
-        .digital-stamp {
-            position: absolute; top: 15px; right: 15px; border: 3px dashed #22c55e; background: rgba(6, 78, 59, 0.9);
-            color: #4ade80; padding: 8px 15px; border-radius: 8px; transform: rotate(-8deg); text-align: center;
-            font-family: monospace; font-size: 11px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: none;
-        }
-
-        .sig-preview-box { margin-top: 15px; background: #0f172a; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #334155; }
-        .close-btn { position: absolute; right: 15px; top: 15px; color: #fff; font-size: 20px; cursor: pointer; background: #334155; width: 30px; height: 30px; border-radius: 50%; line-height: 30px; }
-        .sig-thumb { height: 38px; border-radius: 4px; border: 1px solid #94a3b8; background: white; padding: 2px; }
+        .modal-content { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 800px; width: 92%; max-height: 90vh; overflow-y: auto; position: relative; border: 1px solid #475569; }
+        .close-btn { position: absolute; right: 15px; top: 15px; color: #fff; font-size: 20px; cursor: pointer; background: #334155; width: 28px; height: 28px; border-radius: 50%; text-align: center; }
+        .id-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .id-grid img { width: 100%; height: 200px; object-fit: contain; background: #0f172a; border-radius: 8px; border: 1px solid #334155; }
+        .btn-print { background: #f59e0b; color: #000; font-weight: bold; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">🏨 Dibbi Vault <span class="badge">HOTEL LEGAL MODE</span></div>
-        <div id="connBadge" class="conn-badge conn-offline">🔴 Disconnected</div>
+        <div class="logo">🏨 Dibbi Vault - Desk Console</div>
+        <div id="connBadge" class="conn-badge conn-online">🟢 Desk Online</div>
     </div>
 
     <div class="action-bar">
-        <h3 style="font-size: 16px;">Live Verification Queue</h3>
-        <button onclick="exportAuditLogCSV()" class="btn-export">📄 Export Police Audit Register (CSV)</button>
+        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Search Guest Name, Room No, Mobile or Token..." onkeyup="filterTable()">
+        <button onclick="exportAuditLogCSV()" class="btn-export">📄 Export Audit Register (CSV)</button>
     </div>
 
     <div class="main-container">
         <div class="qr-card">
-            <h3>Hotel Guest Check-In</h3>
-            <p>Paperless ID Inspection</p>
+            <h4 style="font-size: 14px;">Guest QR Check-In</h4>
+            <p style="font-size: 11px; color: #94a3b8;">Scan for Paperless ID Form</p>
             <div id="qrcode"></div>
-            <p style="margin-top: 15px; font-size: 11px; color: #94a3b8;">Terminal ID: counter_jaipur_01</p>
         </div>
 
         <div class="table-card">
             <table>
                 <thead>
                     <tr>
-                        <th>Date & Time</th>
+                        <th>Time</th>
                         <th>Token</th>
+                        <th>Guest Details</th>
                         <th>Doc Type</th>
-                        <th>Guest Signature</th>
-                        <th>Privacy / Legal Status</th>
+                        <th>Signature</th>
+                        <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="doc-list">
-                </tbody>
+                <tbody id="doc-list"></tbody>
             </table>
         </div>
     </div>
 
-    <!-- Viewer Modal -->
+    <!-- Inspector & Print Modal -->
     <div class="modal" id="viewerModal">
-        <div class="modal-content">
+        <div class="modal-content" id="printArea">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            <h3 id="modalTitle">Digital Inspection</h3>
-            
-            <div class="viewer-box">
-                <div id="mediaContainer"></div>
-                <div class="digital-stamp" id="digitalStamp">
-                    <div>✔ OFFICIALLY VERIFIED</div>
-                    <div>COUNTER TERMINAL #1</div>
-                    <div id="stampTime">--</div>
-                    <div id="stampToken">TOKEN #--</div>
+            <h3 id="mTitle">Guest Verification Details</h3>
+            <div id="mInfo" style="font-size: 13px; color: #cbd5e1; margin-top: 5px;"></div>
+
+            <div class="id-grid">
+                <div>
+                    <div style="font-size: 11px; color: #94a3b8;">FRONT SIDE</div>
+                    <img id="mFront" src="" />
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #94a3b8;">BACK SIDE</div>
+                    <img id="mBack" src="" />
                 </div>
             </div>
 
-            <div class="sig-preview-box">
-                <span style="font-size: 13px; color: #cbd5e1; font-weight: bold;">Guest E-Signature:</span>
-                <img id="sigImage" style="height: 50px; background: white; padding: 4px; border-radius: 6px; border: 1px solid #38bdf8;" src="" />
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 10px; border-radius: 8px;">
+                <div>
+                    <span style="font-size: 11px; color: #94a3b8;">Guest E-Signature:</span><br>
+                    <img id="mSig" style="height: 45px; background: white; padding: 2px; border-radius: 4px;" src="" />
+                </div>
+                <button onclick="printGRC()" class="btn-print">🖨️ Print GRC Slip</button>
             </div>
         </div>
     </div>
@@ -122,145 +114,120 @@
         const socket = io();
         const roomId = "counter_jaipur_01"; 
         const uploadURL = `${window.location.origin}/upload.html?room=${roomId}`;
-        let tokenCounter = 101;
-        
-        const auditLogRegister = [];
         const activeFiles = {};
-
-        const connBadge = document.getElementById('connBadge');
-
-        socket.on('connect', () => {
-            connBadge.className = "conn-badge conn-online";
-            connBadge.innerText = "🟢 Connected (Terminal #1)";
-            socket.emit('join-room', roomId);
-        });
-
-        socket.on('disconnect', () => {
-            connBadge.className = "conn-badge conn-offline";
-            connBadge.innerText = "🔴 Server Disconnected...";
-        });
+        const auditLog = [];
 
         QRCode.toCanvas(document.createElement('canvas'), uploadURL, (err, canvas) => {
             document.getElementById('qrcode').appendChild(canvas);
         });
 
+        socket.on('load-initial-data', (dataMap) => {
+            document.getElementById('doc-list').innerHTML = '';
+            Object.values(dataMap).forEach(renderRow);
+        });
+
         socket.on('receive-document', (data) => {
-            const token = tokenCounter++;
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-            const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-            const fullTimeStamp = `${dateStr} ${timeStr}`;
+            renderRow(data);
+        });
 
-            activeFiles[token] = data;
-
-            auditLogRegister.push({
-                date: dateStr,
-                time: timeStr,
-                token: token,
-                docType: data.docType || 'Document',
-                fileName: data.fileName,
-                status: 'Verified Paperlessly'
-            });
+        function renderRow(data) {
+            activeFiles[data.token] = data;
+            const now = new Date(data.createdAt || Date.now());
+            const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
             const tbody = document.getElementById('doc-list');
             const row = document.createElement('tr');
-            row.id = `row-${token}`;
-            
+            row.id = `row-${data.token}`;
+            row.setAttribute('data-search', `${data.guestName} ${data.roomNo} ${data.guestPhone} #${data.token}`.toLowerCase());
+
             row.innerHTML = `
-                <td><span class="time-badge">${fullTimeStamp}</span></td>
-                <td><b>#${token}</b></td>
-                <td><span class="doc-badge">${data.docType || 'Document'}</span></td>
+                <td>${timeStr}</td>
+                <td><b>#${data.token}</b></td>
+                <td><b>${data.guestName}</b><br><span style="font-size: 10px; color: #94a3b8;">Room ${data.roomNo} | ${data.guestPhone}</span></td>
+                <td><span class="doc-badge">${data.docType}</span></td>
+                <td><img src="${data.signatureData}" class="sig-thumb" /></td>
+                <td><span class="status-badge ${data.isVerified ? 'status-verified' : 'status-pending'}" id="status-${data.token}">${data.isVerified ? 'Verified' : 'Pending'}</span></td>
                 <td>
-                    ${data.signatureData ? `<img src="${data.signatureData}" class="sig-thumb" />` : '<span style="color:#64748b;">No Sig</span>'}
-                </td>
-                <td><span class="status-badge status-pending" id="status-${token}">Active (Auto-Delete in 5m)</span></td>
-                <td id="action-cell-${token}">
-                    <button onclick="inspectDoc('${token}')" class="btn-view" id="view-btn-${token}">👁️ Inspect</button>
-                    <button onclick="verifyDoc('${token}')" class="btn-verify" id="btn-${token}">✓ Verify Guest</button>
+                    <button onclick="inspectDoc('${data.token}')" class="btn-view">👁️ View</button>
+                    <button onclick="verifyDoc('${data.token}')" class="btn-verify" ${data.isVerified ? 'disabled style="opacity:0.5"' : ''} id="btn-${data.token}">✓ Verify</button>
                 </td>
             `;
             tbody.prepend(row);
+        }
 
-            setTimeout(() => { purgeDocument(token); }, 300000);
-        });
-
+        let currentToken = null;
         function inspectDoc(token) {
+            currentToken = token;
             const data = activeFiles[token];
-            if (!data) {
-                alert("This file has been auto-purged for guest data privacy.");
-                return;
-            }
-            const container = document.getElementById('mediaContainer');
-            const stamp = document.getElementById('digitalStamp');
-            document.getElementById('modalTitle').innerText = data.fileName;
-            
-            if(data.fileData.startsWith('data:image')) {
-                container.innerHTML = `<img src="${data.fileData}" />`;
-            } else {
-                container.innerHTML = `<iframe src="${data.fileData}" width="100%" height="380px"></iframe>`;
-            }
+            if (!data) return;
 
-            document.getElementById('sigImage').src = data.signatureData || '';
-
-            if (data.isVerified) {
-                document.getElementById('stampTime').innerText = data.verifiedTime;
-                document.getElementById('stampToken').innerText = `TOKEN #${token}`;
-                stamp.style.display = 'block';
-            } else {
-                stamp.style.display = 'none';
-            }
+            document.getElementById('mTitle').innerText = `${data.guestName} (Room ${data.roomNo})`;
+            document.getElementById('mInfo').innerText = `Phone: ${data.guestPhone} | ID Type: ${data.docType} | Token: #${data.token}`;
+            document.getElementById('mFront').src = data.frontImage || '';
+            document.getElementById('mBack').src = data.backImage || data.frontImage;
+            document.getElementById('mSig').src = data.signatureData || '';
 
             document.getElementById('viewerModal').style.display = 'flex';
         }
 
-        function closeModal() {
-            document.getElementById('viewerModal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('viewerModal').style.display = 'none'; }
 
         function verifyDoc(token) {
-            const data = activeFiles[token];
-            if(data) {
-                data.isVerified = true;
-                data.verifiedTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-            }
-
+            socket.emit('verify-token-send', { roomId: roomId, token: token });
             const statusTag = document.getElementById(`status-${token}`);
             const btn = document.getElementById(`btn-${token}`);
-            
-            statusTag.className = "status-badge status-verified";
-            statusTag.innerText = `Verified & Logged`;
-            btn.disabled = true;
-            btn.style.opacity = "0.5";
-
-            socket.emit('verify-token-send', { roomId: roomId, token: token, msg: "Verified Paperlessly!" });
-            inspectDoc(token);
+            if(statusTag) { statusTag.className = "status-badge status-verified"; statusTag.innerText = "Verified"; }
+            if(btn) { btn.disabled = true; btn.style.opacity = "0.5"; }
         }
 
-        function purgeDocument(token) {
-            delete activeFiles[token];
-            const statusTag = document.getElementById(`status-${token}`);
-            const viewBtn = document.getElementById(`view-btn-${token}`);
-            if (statusTag) {
-                statusTag.className = "status-badge status-purged";
-                statusTag.innerText = "File Auto-Purged";
-            }
-            if (viewBtn) {
-                viewBtn.disabled = true;
-                viewBtn.style.opacity = "0.4";
-                viewBtn.innerText = "🔒 Purged";
-            }
+        function filterTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#doc-list tr');
+            rows.forEach(row => {
+                const text = row.getAttribute('data-search');
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        function printGRC() {
+            const data = activeFiles[currentToken];
+            if (!data) return;
+            const win = window.open('', '', 'width=800,height=600');
+            win.document.write(`
+                <html><head><title>GRC Print - Token #${data.token}</title>
+                <style>body{font-family:sans-serif;padding:20px;} h2{color:#0284c7;} table{width:100%;border-collapse:collapse;margin:15px 0;} td{padding:8px;border:1px solid #ccc;} img{max-width:100%;height:180px;object-fit:contain;}</style>
+                </head><body>
+                <h2>🏨 HOTEL GUEST REGISTRATION CARD</h2>
+                <hr>
+                <table>
+                    <tr><td><b>Guest Name:</b> ${data.guestName}</td><td><b>Room No:</b> ${data.roomNo}</td></tr>
+                    <tr><td><b>Mobile:</b> ${data.guestPhone}</td><td><b>Token:</b> #${data.token}</td></tr>
+                    <tr><td><b>ID Type:</b> ${data.docType}</td><td><b>Status:</b> OFFICIALLY VERIFIED</td></tr>
+                </table>
+                <h3>Uploaded Proof of Identity</h3>
+                <div style="display:flex;gap:10px;">
+                    <div><p>Front Image</p><img src="${data.frontImage}"/></div>
+                    ${data.backImage ? `<div><p>Back Image</p><img src="${data.backImage}"/></div>` : ''}
+                </div>
+                <div style="margin-top:20px;">
+                    <p><b>Guest E-Signature:</b></p>
+                    <img src="${data.signatureData}" style="height:60px;border:1px solid #000;padding:4px;"/>
+                </div>
+                </body></html>
+            `);
+            win.document.close();
+            win.print();
         }
 
         function exportAuditLogCSV() {
-            if (auditLogRegister.length === 0) { alert("No check-in entries logged today yet."); return; }
-            let csvContent = "data:text/csv;charset=utf-8,Date,Time,Token_ID,Document_Type,File_Name,Verification_Status\n";
-            auditLogRegister.forEach(row => { csvContent += `${row.date},${row.time},#${row.token},"${row.docType}","${row.fileName}",${row.status}\n`; });
+            let csv = "Token,Guest_Name,Room_No,Phone,Doc_Type,Status\n";
+            Object.values(activeFiles).forEach(d => {
+                csv += `#${d.token},"${d.guestName}","${d.roomNo}","${d.guestPhone}","${d.docType}",Verified\n`;
+            });
             const link = document.createElement("a");
-            link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", `Guest_Audit_Register_${new Date().toISOString().slice(0,10)}.csv`);
-            document.body.appendChild(link);
+            link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
+            link.download = `Hotel_Guest_Log_${new Date().toISOString().slice(0,10)}.csv`;
             link.click();
-            document.body.removeChild(link);
         }
     </script>
 </body>
