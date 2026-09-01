@@ -3,68 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dibbi Vault - Hotel Desk Console</title>
+    <title>Desk Console - Dibbi Paperless Vault</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #0f172a; padding: 15px; color: #f8fafc; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #1e293b; padding: 12px 20px; border-radius: 12px; border: 1px solid #334155; }
-        .logo { font-size: 18px; font-weight: bold; color: #38bdf8; }
-        .conn-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .conn-online { background: #16a34a; color: white; }
+        body { background-color: #0b132b; color: #f8fafc; padding: 20px; }
         
-        .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; }
-        .search-box { flex: 1; max-width: 400px; padding: 8px 12px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 13px; }
-        .btn-export { background: #10b981; color: #000; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 12px; border: none; cursor: pointer; }
-
-        .main-container { display: grid; grid-template-columns: 280px 1fr; gap: 15px; }
-        .qr-card { background: #1e293b; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
-        #qrcode { background: white; padding: 8px; border-radius: 8px; display: inline-block; margin-top: 10px; }
+        .top-nav { font-size: 22px; font-weight: bold; color: #38bdf8; margin-bottom: 15px; }
         
-        .table-card { background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; overflow-x: auto; }
+        .main-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+        
+        .qr-section { background: #1c2541; padding: 20px; border-radius: 14px; text-align: center; border: 1px solid #2a3a5e; height: fit-content; }
+        #qrcode { background: white; padding: 10px; border-radius: 8px; display: inline-block; margin: 15px 0; }
+        
+        .table-section { background: #1c2541; padding: 20px; border-radius: 14px; border: 1px solid #2a3a5e; }
+        
+        .search-box { width: 100%; max-width: 300px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; margin-bottom: 15px; outline: none; }
+        
         table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #334155; font-size: 12px; vertical-align: middle; }
-        th { background: #0f172a; color: #94a3b8; }
-        
-        .doc-badge { background: #0284c7; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
-        .status-badge { padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
-        .status-pending { background: #f59e0b; color: #000; }
-        .status-verified { background: #22c55e; color: #000; }
+        th, td { text-align: left; padding: 14px 10px; border-bottom: 1px solid #2a3a5e; font-size: 13px; }
+        th { color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 11px; }
 
-        .btn-view { background: #38bdf8; color: #0f172a; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; }
-        .btn-verify { background: #22c55e; color: #0f172a; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; }
+        .guest-name { font-weight: bold; color: #ffffff; font-size: 14px; }
+        .guest-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+        .doc-badge { background: #0284c7; color: white; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; }
+        .status-badge { background: #22c55e; color: #000; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; }
         .sig-thumb { height: 32px; background: white; padding: 2px; border-radius: 4px; }
 
-        /* Modal View */
+        .btn-view { background: #0284c7; color: white; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; font-size: 12px; }
+
+        /* Inspection Modal */
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
-        .modal-content { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 800px; width: 92%; max-height: 90vh; overflow-y: auto; position: relative; border: 1px solid #475569; }
-        .close-btn { position: absolute; right: 15px; top: 15px; color: #fff; font-size: 20px; cursor: pointer; background: #334155; width: 28px; height: 28px; border-radius: 50%; text-align: center; }
-        .id-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-        .id-grid img { width: 100%; height: 200px; object-fit: contain; background: #0f172a; border-radius: 8px; border: 1px solid #334155; }
-        .btn-print { background: #f59e0b; color: #000; font-weight: bold; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; margin-top: 10px; }
+        .modal-content { background: #1c2541; padding: 25px; border-radius: 16px; width: 90%; max-width: 850px; border: 1px solid #334155; position: relative; }
+        .modal-header h2 { font-size: 20px; color: #ffffff; margin-bottom: 4px; }
+        .modal-header p { font-size: 13px; color: #94a3b8; margin-bottom: 15px; }
+
+        .images-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .img-box { background: #0b132b; border: 1px solid #334155; border-radius: 10px; padding: 10px; text-align: center; }
+        .img-box span { font-size: 11px; font-weight: bold; color: #94a3b8; display: block; margin-bottom: 8px; }
+        .img-box img { max-width: 100%; max-height: 220px; border-radius: 6px; object-fit: contain; }
+
+        .modal-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #334155; padding-top: 15px; margin-top: 10px; }
+        .btn-print { background: #f59e0b; color: #000; padding: 10px 20px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+
+        .close-btn { position: absolute; right: 20px; top: 20px; color: #94a3b8; font-size: 20px; cursor: pointer; }
+
+        /* Print GRC Slip Format */
+        #printableSlip { display: none; background: white; color: black; padding: 30px; border-radius: 8px; }
+        @media print {
+            body * { visibility: hidden; }
+            #printableSlip, #printableSlip * { visibility: visible; }
+            #printableSlip { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="logo">🏨 Dibbi Vault - Desk Console</div>
-        <div id="connBadge" class="conn-badge conn-online">🟢 Desk Online</div>
-    </div>
+    <div class="top-nav">Desk Console</div>
 
-    <div class="action-bar">
-        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Search Guest Name, Room No, Mobile or Token..." onkeyup="filterTable()">
-        <button onclick="exportAuditLogCSV()" class="btn-export">📄 Export Audit Register (CSV)</button>
-    </div>
-
-    <div class="main-container">
-        <div class="qr-card">
-            <h4 style="font-size: 14px;">Guest QR Check-In</h4>
-            <p style="font-size: 11px; color: #94a3b8;">Scan for Paperless ID Form</p>
+    <div class="main-layout">
+        <div class="qr-section">
+            <h3 style="font-size: 16px;">Guest Scan QR</h3>
             <div id="qrcode"></div>
+            <p style="font-size: 11px; color: #94a3b8;">Counter #1 Live Sync</p>
         </div>
 
-        <div class="table-card">
+        <div class="table-section">
+            <input type="text" class="search-box" placeholder="No, Mobile or Token...">
             <table>
                 <thead>
                     <tr>
@@ -82,40 +89,77 @@
         </div>
     </div>
 
-    <!-- Inspector & Print Modal -->
+    <!-- Modal View -->
     <div class="modal" id="viewerModal">
-        <div class="modal-content" id="printArea">
+        <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            <h3 id="mTitle">Guest Verification Details</h3>
-            <div id="mInfo" style="font-size: 13px; color: #cbd5e1; margin-top: 5px;"></div>
+            <div class="modal-header">
+                <h2 id="mGuestTitle">Babali (Room 1005)</h2>
+                <p id="mGuestMeta">Phone: 7060071469 | ID Type: Aadhaar Card | Token: #101</p>
+            </div>
 
-            <div class="id-grid">
-                <div>
-                    <div style="font-size: 11px; color: #94a3b8;">FRONT SIDE</div>
-                    <img id="mFront" src="" />
+            <div class="images-grid">
+                <div class="img-box">
+                    <span>FRONT SIDE</span>
+                    <img id="mFrontImg" src="" />
                 </div>
-                <div>
-                    <div style="font-size: 11px; color: #94a3b8;">BACK SIDE</div>
-                    <img id="mBack" src="" />
+                <div class="img-box">
+                    <span>BACK SIDE</span>
+                    <img id="mBackImg" src="" />
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 10px; border-radius: 8px;">
+            <div class="modal-footer">
                 <div>
-                    <span style="font-size: 11px; color: #94a3b8;">Guest E-Signature:</span><br>
-                    <img id="mSig" style="height: 45px; background: white; padding: 2px; border-radius: 4px;" src="" />
+                    <span style="font-size: 12px; color: #cbd5e1; display: block; margin-bottom: 4px;">Guest E-Signature:</span>
+                    <img id="mSigImg" style="height: 45px; background: white; padding: 3px; border-radius: 6px;" src="" />
                 </div>
-                <button onclick="printGRC()" class="btn-print">🖨️ Print GRC Slip</button>
+                <button class="btn-print" onclick="window.print()">🖨️ Print GRC Slip</button>
             </div>
         </div>
     </div>
 
+    <!-- Printable GRC Document Layout -->
+    <div id="printableSlip">
+        <div style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="font-size: 18px; margin: 0;">🏨 HOTEL GUEST REGISTRATION CARD</h2>
+            <span style="font-size: 12px; font-weight: bold;" id="pStatus">Status: OFFICIALLY VERIFIED</span>
+        </div>
+
+        <table style="width: 100%; margin-bottom: 20px; border: 1px solid #ccc;" border="1" cellpadding="8">
+            <tr>
+                <td><b>Guest Name:</b> <span id="pName">--</span></td>
+                <td><b>Room No:</b> <span id="pRoom">--</span></td>
+            </tr>
+            <tr>
+                <td><b>Mobile:</b> <span id="pMobile">--</span></td>
+                <td><b>Token:</b> <span id="pToken">--</span></td>
+            </tr>
+            <tr>
+                <td colspan="2"><b>ID Type:</b> <span id="pDocType">--</span></td>
+            </tr>
+        </table>
+
+        <h4 style="margin-bottom: 10px;">Uploaded Proof of Identity</h4>
+        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+            <div style="flex: 1; text-align: center; border: 1px solid #ccc; padding: 5px;">
+                <div style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">Front Image</div>
+                <img id="pFrontImg" style="max-width: 100%; max-height: 250px;" src="" />
+            </div>
+            <div style="flex: 1; text-align: center; border: 1px solid #ccc; padding: 5px;">
+                <div style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">Back Image</div>
+                <img id="pBackImg" style="max-width: 100%; max-height: 250px;" src="" />
+            </div>
+        </div>
+
+        <h4 style="margin-bottom: 5px;">Guest E-Signature:</h4>
+        <img id="pSigImg" style="height: 50px; border: 1px solid #000; padding: 2px;" src="" />
+    </div>
+
     <script>
         const socket = io();
-        const roomId = "counter_jaipur_01"; 
-        const uploadURL = `${window.location.origin}/upload.html?room=${roomId}`;
-        const activeFiles = {};
-        const auditLog = [];
+        const uploadURL = `${window.location.origin}/upload.html`;
+        const recordsMap = {};
 
         QRCode.toCanvas(document.createElement('canvas'), uploadURL, (err, canvas) => {
             document.getElementById('qrcode').appendChild(canvas);
@@ -123,112 +167,62 @@
 
         socket.on('load-initial-data', (dataMap) => {
             document.getElementById('doc-list').innerHTML = '';
-            Object.values(dataMap).forEach(renderRow);
+            Object.values(dataMap).forEach(data => addRowToTable(data));
         });
 
         socket.on('receive-document', (data) => {
-            renderRow(data);
+            addRowToTable(data);
         });
 
-        function renderRow(data) {
-            activeFiles[data.token] = data;
+        function addRowToTable(data) {
+            recordsMap[data.token] = data;
             const now = new Date(data.createdAt || Date.now());
-            const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
             const tbody = document.getElementById('doc-list');
             const row = document.createElement('tr');
             row.id = `row-${data.token}`;
-            row.setAttribute('data-search', `${data.guestName} ${data.roomNo} ${data.guestPhone} #${data.token}`.toLowerCase());
-
+            
             row.innerHTML = `
                 <td>${timeStr}</td>
                 <td><b>#${data.token}</b></td>
-                <td><b>${data.guestName}</b><br><span style="font-size: 10px; color: #94a3b8;">Room ${data.roomNo} | ${data.guestPhone}</span></td>
-                <td><span class="doc-badge">${data.docType}</span></td>
-                <td><img src="${data.signatureData}" class="sig-thumb" /></td>
-                <td><span class="status-badge ${data.isVerified ? 'status-verified' : 'status-pending'}" id="status-${data.token}">${data.isVerified ? 'Verified' : 'Pending'}</span></td>
                 <td>
-                    <button onclick="inspectDoc('${data.token}')" class="btn-view">👁️ View</button>
-                    <button onclick="verifyDoc('${data.token}')" class="btn-verify" ${data.isVerified ? 'disabled style="opacity:0.5"' : ''} id="btn-${data.token}">✓ Verify</button>
+                    <div class="guest-name">${data.guestName || 'Guest'}</div>
+                    <div class="guest-sub">Room ${data.roomNo || '--'} | ${data.mobile || '--'}</div>
                 </td>
+                <td><span class="doc-badge">${data.docType || 'ID Card'}</span></td>
+                <td><img src="${data.signatureData}" class="sig-thumb" /></td>
+                <td><span class="status-badge">Verified</span></td>
+                <td><button onclick="inspectDoc('${data.token}')" class="btn-view">Inspect</button></td>
             `;
             tbody.prepend(row);
         }
 
-        let currentToken = null;
         function inspectDoc(token) {
-            currentToken = token;
-            const data = activeFiles[token];
+            const data = recordsMap[token];
             if (!data) return;
 
-            document.getElementById('mTitle').innerText = `${data.guestName} (Room ${data.roomNo})`;
-            document.getElementById('mInfo').innerText = `Phone: ${data.guestPhone} | ID Type: ${data.docType} | Token: #${data.token}`;
-            document.getElementById('mFront').src = data.frontImage || '';
-            document.getElementById('mBack').src = data.backImage || data.frontImage;
-            document.getElementById('mSig').src = data.signatureData || '';
+            // Fill Modal
+            document.getElementById('mGuestTitle').innerText = `${data.guestName} (Room ${data.roomNo})`;
+            document.getElementById('mGuestMeta').innerText = `Phone: ${data.mobile} | ID Type: ${data.docType} | Token: #${data.token}`;
+            document.getElementById('mFrontImg').src = data.frontImage || '';
+            document.getElementById('mBackImg').src = data.backImage || '';
+            document.getElementById('mSigImg').src = data.signatureData || '';
+
+            // Fill Printable Slip
+            document.getElementById('pName').innerText = data.guestName;
+            document.getElementById('pRoom').innerText = data.roomNo;
+            document.getElementById('pMobile').innerText = data.mobile;
+            document.getElementById('pToken').innerText = `#${data.token}`;
+            document.getElementById('pDocType').innerText = data.docType;
+            document.getElementById('pFrontImg').src = data.frontImage || '';
+            document.getElementById('pBackImg').src = data.backImage || '';
+            document.getElementById('pSigImg').src = data.signatureData || '';
 
             document.getElementById('viewerModal').style.display = 'flex';
         }
 
         function closeModal() { document.getElementById('viewerModal').style.display = 'none'; }
-
-        function verifyDoc(token) {
-            socket.emit('verify-token-send', { roomId: roomId, token: token });
-            const statusTag = document.getElementById(`status-${token}`);
-            const btn = document.getElementById(`btn-${token}`);
-            if(statusTag) { statusTag.className = "status-badge status-verified"; statusTag.innerText = "Verified"; }
-            if(btn) { btn.disabled = true; btn.style.opacity = "0.5"; }
-        }
-
-        function filterTable() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const rows = document.querySelectorAll('#doc-list tr');
-            rows.forEach(row => {
-                const text = row.getAttribute('data-search');
-                row.style.display = text.includes(query) ? '' : 'none';
-            });
-        }
-
-        function printGRC() {
-            const data = activeFiles[currentToken];
-            if (!data) return;
-            const win = window.open('', '', 'width=800,height=600');
-            win.document.write(`
-                <html><head><title>GRC Print - Token #${data.token}</title>
-                <style>body{font-family:sans-serif;padding:20px;} h2{color:#0284c7;} table{width:100%;border-collapse:collapse;margin:15px 0;} td{padding:8px;border:1px solid #ccc;} img{max-width:100%;height:180px;object-fit:contain;}</style>
-                </head><body>
-                <h2>🏨 HOTEL GUEST REGISTRATION CARD</h2>
-                <hr>
-                <table>
-                    <tr><td><b>Guest Name:</b> ${data.guestName}</td><td><b>Room No:</b> ${data.roomNo}</td></tr>
-                    <tr><td><b>Mobile:</b> ${data.guestPhone}</td><td><b>Token:</b> #${data.token}</td></tr>
-                    <tr><td><b>ID Type:</b> ${data.docType}</td><td><b>Status:</b> OFFICIALLY VERIFIED</td></tr>
-                </table>
-                <h3>Uploaded Proof of Identity</h3>
-                <div style="display:flex;gap:10px;">
-                    <div><p>Front Image</p><img src="${data.frontImage}"/></div>
-                    ${data.backImage ? `<div><p>Back Image</p><img src="${data.backImage}"/></div>` : ''}
-                </div>
-                <div style="margin-top:20px;">
-                    <p><b>Guest E-Signature:</b></p>
-                    <img src="${data.signatureData}" style="height:60px;border:1px solid #000;padding:4px;"/>
-                </div>
-                </body></html>
-            `);
-            win.document.close();
-            win.print();
-        }
-
-        function exportAuditLogCSV() {
-            let csv = "Token,Guest_Name,Room_No,Phone,Doc_Type,Status\n";
-            Object.values(activeFiles).forEach(d => {
-                csv += `#${d.token},"${d.guestName}","${d.roomNo}","${d.guestPhone}","${d.docType}",Verified\n`;
-            });
-            const link = document.createElement("a");
-            link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
-            link.download = `Hotel_Guest_Log_${new Date().toISOString().slice(0,10)}.csv`;
-            link.click();
-        }
     </script>
 </body>
 </html>
