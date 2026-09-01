@@ -38,21 +38,37 @@
 
         .btn-view { background: #38bdf8; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-right: 5px; }
         .btn-verify { background: #22c55e; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; }
-        
+        .btn-print { background: #f59e0b; color: #000; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-left: 8px; }
+
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
-        .modal-content { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 750px; width: 90%; text-align: center; border: 1px solid #475569; position: relative; }
-        .viewer-box { position: relative; display: inline-block; margin-top: 10px; max-width: 100%; }
-        .viewer-box img { max-width: 100%; max-height: 50vh; border-radius: 8px; }
+        .modal-content { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 750px; width: 90%; text-align: center; border: 1px solid #475569; position: relative; max-height: 90vh; overflow-y: auto; }
+        
+        /* Print Certificate Styling */
+        #printableDoc { background: white; color: #1e293b; padding: 25px; border-radius: 8px; text-align: left; margin-top: 15px; border: 2px solid #0f172a; position: relative; }
+        .doc-header-print { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 15px; }
+        .doc-header-print h2 { color: #0f172a; font-size: 20px; }
+        .doc-meta { font-size: 12px; color: #475569; }
+        
+        .img-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .img-box { border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; text-align: center; background: #f8fafc; }
+        .img-box img { max-width: 100%; max-height: 250px; object-fit: contain; }
+        .img-box label { font-size: 11px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px; text-transform: uppercase; }
 
         .digital-stamp {
-            position: absolute; top: 15px; right: 15px; border: 3px dashed #22c55e; background: rgba(6, 78, 59, 0.9);
-            color: #4ade80; padding: 8px 15px; border-radius: 8px; transform: rotate(-8deg); text-align: center;
-            font-family: monospace; font-size: 11px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: none;
+            border: 3px dashed #16a34a; background: rgba(22, 163, 74, 0.1);
+            color: #15803d; padding: 8px 15px; border-radius: 8px; text-align: center;
+            font-family: monospace; font-size: 12px; font-weight: bold; display: inline-block;
         }
 
-        .sig-preview-box { margin-top: 15px; background: #0f172a; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #334155; }
         .close-btn { position: absolute; right: 15px; top: 15px; color: #fff; font-size: 20px; cursor: pointer; background: #334155; width: 30px; height: 30px; border-radius: 50%; line-height: 30px; }
-        .sig-thumb { height: 38px; border-radius: 4px; border: 1px solid #94a3b8; background: white; padding: 2px; }
+
+        /* Media Print Settings for 1-Click PDF */
+        @media print {
+            body * { visibility: hidden; }
+            #printableDoc, #printableDoc * { visibility: visible; }
+            #printableDoc { position: absolute; left: 0; top: 0; width: 100%; border: none; padding: 0; margin: 0; }
+            .btn-print, .close-btn { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -92,24 +108,47 @@
         </div>
     </div>
 
+    <!-- Printable Inspection Modal -->
     <div class="modal" id="viewerModal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            <h3 id="modalTitle">Digital Inspection</h3>
-            
-            <div class="viewer-box">
-                <div id="mediaContainer"></div>
-                <div class="digital-stamp" id="digitalStamp">
-                    <div>✔ OFFICIALLY VERIFIED</div>
-                    <div>COUNTER TERMINAL #1</div>
-                    <div id="stampTime">--</div>
-                    <div id="stampToken">TOKEN #--</div>
-                </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 id="modalTitle" style="color:#f8fafc;">Document Inspection & Print View</h3>
+                <button class="btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
             </div>
+            
+            <div id="printableDoc">
+                <div class="doc-header-print">
+                    <div>
+                        <h2>🏨 HOTEL PAPERLESS AUDIT VERIFICATION SLIP</h2>
+                        <div class="doc-meta" id="printHotelMeta">Terminal: Counter #1 | ID Verification Record</div>
+                    </div>
+                    <div class="digital-stamp" id="digitalStamp">
+                        ✔ OFFICIALLY VERIFIED
+                        <div id="stampTime" style="font-size:10px; font-weight:normal;">--</div>
+                    </div>
+                </div>
 
-            <div class="sig-preview-box">
-                <span style="font-size: 13px; color: #cbd5e1; font-weight: bold;">Guest E-Signature:</span>
-                <img id="sigImage" style="height: 50px; background: white; padding: 4px; border-radius: 6px; border: 1px solid #38bdf8;" src="" />
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px;">
+                    <div><b>Token Number:</b> <span id="printToken">#101</span></div>
+                    <div><b>Document Type:</b> <span id="printDocType">Aadhaar Card</span></div>
+                    <div><b>Timestamp:</b> <span id="printTime">--</span></div>
+                </div>
+
+                <div class="img-grid">
+                    <div class="img-box">
+                        <label>Uploaded Document / ID Photo</label>
+                        <div id="mediaContainer"></div>
+                    </div>
+                    <div class="img-box">
+                        <label>Guest Digital Signature</label>
+                        <img id="sigImage" style="max-height: 200px;" src="" />
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; font-size: 10px; color: #64748b; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 8px;">
+                    This is an encrypted paperless verification document generated digitally via Dibbi Vault System.
+                </div>
             </div>
         </div>
     </div>
@@ -136,7 +175,6 @@
             document.getElementById('qrcode').appendChild(canvas);
         });
 
-        // Server refresh hone par purana saara data load karein
         socket.on('load-initial-data', (dataMap) => {
             document.getElementById('doc-list').innerHTML = '';
             Object.values(dataMap).forEach(data => addRowToTable(data));
@@ -162,11 +200,11 @@
                 <td><b>#${data.token}</b></td>
                 <td><span class="doc-badge">${data.docType || 'Document'}</span></td>
                 <td>
-                    ${data.signatureData ? `<img src="${data.signatureData}" class="sig-thumb" />` : '<span style="color:#64748b;">No Sig</span>'}
+                    ${data.signatureData ? `<img src="${data.signatureData}" style="height:35px; background:white; padding:2px; border-radius:4px;" />` : '<span style="color:#64748b;">No Sig</span>'}
                 </td>
                 <td><span class="status-badge ${data.isVerified ? 'status-verified' : 'status-pending'}" id="status-${data.token}">${data.isVerified ? 'Verified & Logged' : 'Active'}</span></td>
                 <td id="action-cell-${data.token}">
-                    <button onclick="inspectDoc('${data.token}')" class="btn-view" id="view-btn-${data.token}">👁️ Inspect</button>
+                    <button onclick="inspectDoc('${data.token}')" class="btn-view" id="view-btn-${data.token}">👁️ Inspect / Print</button>
                     <button onclick="verifyDoc('${data.token}')" class="btn-verify" id="btn-${data.token}" ${data.isVerified ? 'disabled style="opacity:0.5;"' : ''}>✓ Verify Guest</button>
                 </td>
             `;
@@ -177,23 +215,25 @@
             const data = activeFiles[token];
             if (!data) return;
             const container = document.getElementById('mediaContainer');
-            const stamp = document.getElementById('digitalStamp');
-            document.getElementById('modalTitle').innerText = data.fileName;
+            
+            document.getElementById('printToken').innerText = `#${data.token}`;
+            document.getElementById('printDocType').innerText = data.docType || 'ID Card';
+            document.getElementById('printTime').innerText = new Date(data.createdAt).toLocaleString('en-IN');
             
             if(data.fileData.startsWith('data:image')) {
-                container.innerHTML = `<img src="${data.fileData}" />`;
+                container.innerHTML = `<img src="${data.fileData}" style="max-width:100%; border-radius:6px;" />`;
             } else {
-                container.innerHTML = `<iframe src="${data.fileData}" width="100%" height="380px"></iframe>`;
+                container.innerHTML = `<iframe src="${data.fileData}" width="100%" height="250px"></iframe>`;
             }
 
             document.getElementById('sigImage').src = data.signatureData || '';
 
             if (data.isVerified) {
-                document.getElementById('stampTime').innerText = data.verifiedTime;
-                document.getElementById('stampToken').innerText = `TOKEN #${token}`;
-                stamp.style.display = 'block';
+                document.getElementById('stampTime').innerText = `Verified at: ${data.verifiedTime || 'Live'}`;
+                document.getElementById('digitalStamp').style.display = 'inline-block';
             } else {
-                stamp.style.display = 'none';
+                document.getElementById('stampTime').innerText = `Pending Verification`;
+                document.getElementById('digitalStamp').style.display = 'inline-block';
             }
 
             document.getElementById('viewerModal').style.display = 'flex';
