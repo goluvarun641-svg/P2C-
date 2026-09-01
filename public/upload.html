@@ -2,233 +2,224 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dibbi Vault - Hotel Desk Console</title>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dibbi Paperless Vault</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #0f172a; padding: 15px; color: #f8fafc; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #1e293b; padding: 12px 20px; border-radius: 12px; border: 1px solid #334155; }
-        .logo { font-size: 18px; font-weight: bold; color: #38bdf8; }
-        .conn-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .conn-online { background: #16a34a; color: white; }
+        body { background: #0f172a; color: #f8fafc; padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: #1e293b; padding: 22px; border-radius: 16px; border: 1px solid #334155; width: 100%; max-width: 440px; }
+        .logo { font-size: 20px; font-weight: bold; color: #38bdf8; text-align: center; margin-bottom: 2px; }
+        .subtitle { font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 12px; }
         
-        .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; }
-        .search-box { flex: 1; max-width: 400px; padding: 8px 12px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 13px; }
-        .btn-export { background: #10b981; color: #000; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 12px; border: none; cursor: pointer; }
-
-        .main-container { display: grid; grid-template-columns: 280px 1fr; gap: 15px; }
-        .qr-card { background: #1e293b; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
-        #qrcode { background: white; padding: 8px; border-radius: 8px; display: inline-block; margin-top: 10px; }
+        .status-indicator { display: block; text-align: center; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 12px; }
+        .status-online { background: #16a34a; color: white; }
+        .status-offline { background: #dc2626; color: white; }
         
-        .table-card { background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #334155; font-size: 12px; vertical-align: middle; }
-        th { background: #0f172a; color: #94a3b8; }
+        .form-row { display: flex; gap: 10px; }
+        .form-group { text-align: left; margin-bottom: 10px; flex: 1; }
+        label { font-size: 11px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 4px; }
+        select, input[type="text"], input[type="tel"], input[type="file"] { width: 100%; padding: 10px; border: 1px solid #475569; border-radius: 8px; font-size: 13px; background: #0f172a; color: white; }
         
-        .doc-badge { background: #0284c7; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
-        .status-badge { padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
-        .status-pending { background: #f59e0b; color: #000; }
-        .status-verified { background: #22c55e; color: #000; }
+        .sig-container { background: #ffffff; border-radius: 10px; border: 2px dashed #0284c7; touch-action: none; position: relative; overflow: hidden; }
+        canvas { width: 100%; height: 160px; display: block; border-radius: 8px; cursor: crosshair; }
+        .sig-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .clear-btn { background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
 
-        .btn-view { background: #38bdf8; color: #0f172a; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; }
-        .btn-verify { background: #22c55e; color: #0f172a; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; }
-        .sig-thumb { height: 32px; background: white; padding: 2px; border-radius: 4px; }
-
-        /* Modal View */
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
-        .modal-content { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 800px; width: 92%; max-height: 90vh; overflow-y: auto; position: relative; border: 1px solid #475569; }
-        .close-btn { position: absolute; right: 15px; top: 15px; color: #fff; font-size: 20px; cursor: pointer; background: #334155; width: 28px; height: 28px; border-radius: 50%; text-align: center; }
-        .id-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-        .id-grid img { width: 100%; height: 200px; object-fit: contain; background: #0f172a; border-radius: 8px; border: 1px solid #334155; }
-        .btn-print { background: #f59e0b; color: #000; font-weight: bold; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; margin-top: 10px; }
+        .btn-submit { width: 100%; background: #0284c7; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; }
+        .token-card { display: none; margin-top: 15px; background: #064e3b; border: 1px solid #10b981; padding: 15px; border-radius: 12px; text-align: center; }
+        .token-number { font-size: 28px; font-weight: bold; color: #34d399; margin: 5px 0; }
     </style>
 </head>
 <body>
+    <div class="card">
+        <div class="logo">🍃 Dibbi Paperless Vault</div>
+        <div class="subtitle">Hotel Guest Verification • Digital Check-In</div>
+        
+        <div id="connStatus" class="status-indicator status-offline">Connecting...</div>
 
-    <div class="header">
-        <div class="logo">🏨 Dibbi Vault - Desk Console</div>
-        <div id="connBadge" class="conn-badge conn-online">🟢 Desk Online</div>
-    </div>
+        <form id="uploadForm">
+            <div class="form-group">
+                <label>Guest Full Name *</label>
+                <input type="text" id="guestName" placeholder="e.g. Varun Sharma" required>
+            </div>
 
-    <div class="action-bar">
-        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Search Guest Name, Room No, Mobile or Token..." onkeyup="filterTable()">
-        <button onclick="exportAuditLogCSV()" class="btn-export">📄 Export Audit Register (CSV)</button>
-    </div>
-
-    <div class="main-container">
-        <div class="qr-card">
-            <h4 style="font-size: 14px;">Guest QR Check-In</h4>
-            <p style="font-size: 11px; color: #94a3b8;">Scan for Paperless ID Form</p>
-            <div id="qrcode"></div>
-        </div>
-
-        <div class="table-card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Token</th>
-                        <th>Guest Details</th>
-                        <th>Doc Type</th>
-                        <th>Signature</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="doc-list"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Inspector & Print Modal -->
-    <div class="modal" id="viewerModal">
-        <div class="modal-content" id="printArea">
-            <span class="close-btn" onclick="closeModal()">&times;</span>
-            <h3 id="mTitle">Guest Verification Details</h3>
-            <div id="mInfo" style="font-size: 13px; color: #cbd5e1; margin-top: 5px;"></div>
-
-            <div class="id-grid">
-                <div>
-                    <div style="font-size: 11px; color: #94a3b8;">FRONT SIDE</div>
-                    <img id="mFront" src="" />
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Mobile Number *</label>
+                    <input type="tel" id="guestPhone" placeholder="9876543210" required>
                 </div>
-                <div>
-                    <div style="font-size: 11px; color: #94a3b8;">BACK SIDE</div>
-                    <img id="mBack" src="" />
+                <div class="form-group">
+                    <label>Room No. *</label>
+                    <input type="text" id="roomNo" placeholder="102" required>
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 10px; border-radius: 8px;">
-                <div>
-                    <span style="font-size: 11px; color: #94a3b8;">Guest E-Signature:</span><br>
-                    <img id="mSig" style="height: 45px; background: white; padding: 2px; border-radius: 4px;" src="" />
-                </div>
-                <button onclick="printGRC()" class="btn-print">🖨️ Print GRC Slip</button>
+            <div class="form-group">
+                <label>Document Type *</label>
+                <select id="docType" required>
+                    <option value="Aadhaar Card">Aadhaar Card</option>
+                    <option value="PAN Card">PAN Card</option>
+                    <option value="Driving License">Driving License</option>
+                    <option value="Passport">Passport</option>
+                </select>
             </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>ID Front Side *</label>
+                    <input type="file" id="frontFile" accept="image/*" required>
+                </div>
+                <div class="form-group">
+                    <label>ID Back Side (Optional)</label>
+                    <input type="file" id="backFile" accept="image/*">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="sig-header">
+                    <label style="margin: 0;">Guest E-Signature *</label>
+                    <button type="button" class="clear-btn" onclick="clearSignature()">Clear 🔄</button>
+                </div>
+                <div class="sig-container">
+                    <canvas id="sigCanvas"></canvas>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">Submit Digital Registration 🚀</button>
+        </form>
+
+        <div class="token-card" id="tokenBox">
+            <div style="font-size: 12px; color: #a7f3d0;">CHECK-IN SUCCESSFUL</div>
+            <div class="token-number" id="tokenNo">TOKEN #101</div>
+            <div style="font-size: 11px; color: #6ee7b7;">Paperless Verification Complete</div>
         </div>
     </div>
 
     <script>
         const socket = io();
-        const roomId = "counter_jaipur_01"; 
-        const uploadURL = `${window.location.origin}/upload.html?room=${roomId}`;
-        const activeFiles = {};
-        const auditLog = [];
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room') || 'counter_jaipur_01';
 
-        QRCode.toCanvas(document.createElement('canvas'), uploadURL, (err, canvas) => {
-            document.getElementById('qrcode').appendChild(canvas);
+        const connStatus = document.getElementById('connStatus');
+        const submitBtn = document.getElementById('submitBtn');
+
+        socket.on('connect', () => {
+            connStatus.className = "status-indicator status-online";
+            connStatus.innerText = "🟢 Connected to Hotel Desk";
+            socket.emit('join-room', roomId);
         });
 
-        socket.on('load-initial-data', (dataMap) => {
-            document.getElementById('doc-list').innerHTML = '';
-            Object.values(dataMap).forEach(renderRow);
+        socket.on('disconnect', () => {
+            connStatus.className = "status-indicator status-offline";
+            connStatus.innerText = "🔴 Reconnecting...";
         });
 
-        socket.on('receive-document', (data) => {
-            renderRow(data);
-        });
+        const canvas = document.getElementById('sigCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false, hasSigned = false, points = [];
 
-        function renderRow(data) {
-            activeFiles[data.token] = data;
-            const now = new Date(data.createdAt || Date.now());
-            const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-
-            const tbody = document.getElementById('doc-list');
-            const row = document.createElement('tr');
-            row.id = `row-${data.token}`;
-            row.setAttribute('data-search', `${data.guestName} ${data.roomNo} ${data.guestPhone} #${data.token}`.toLowerCase());
-
-            row.innerHTML = `
-                <td>${timeStr}</td>
-                <td><b>#${data.token}</b></td>
-                <td><b>${data.guestName}</b><br><span style="font-size: 10px; color: #94a3b8;">Room ${data.roomNo} | ${data.guestPhone}</span></td>
-                <td><span class="doc-badge">${data.docType}</span></td>
-                <td><img src="${data.signatureData}" class="sig-thumb" /></td>
-                <td><span class="status-badge ${data.isVerified ? 'status-verified' : 'status-pending'}" id="status-${data.token}">${data.isVerified ? 'Verified' : 'Pending'}</span></td>
-                <td>
-                    <button onclick="inspectDoc('${data.token}')" class="btn-view">👁️ View</button>
-                    <button onclick="verifyDoc('${data.token}')" class="btn-verify" ${data.isVerified ? 'disabled style="opacity:0.5"' : ''} id="btn-${data.token}">✓ Verify</button>
-                </td>
-            `;
-            tbody.prepend(row);
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0f172a';
+            drawBaseline(rect.width, rect.height);
         }
 
-        let currentToken = null;
-        function inspectDoc(token) {
-            currentToken = token;
-            const data = activeFiles[token];
-            if (!data) return;
-
-            document.getElementById('mTitle').innerText = `${data.guestName} (Room ${data.roomNo})`;
-            document.getElementById('mInfo').innerText = `Phone: ${data.guestPhone} | ID Type: ${data.docType} | Token: #${data.token}`;
-            document.getElementById('mFront').src = data.frontImage || '';
-            document.getElementById('mBack').src = data.backImage || data.frontImage;
-            document.getElementById('mSig').src = data.signatureData || '';
-
-            document.getElementById('viewerModal').style.display = 'flex';
+        function drawBaseline(w, h) {
+            ctx.save(); ctx.beginPath(); ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]); ctx.moveTo(10, h - 30); ctx.lineTo(w - 10, h - 30); ctx.stroke(); ctx.restore();
         }
 
-        function closeModal() { document.getElementById('viewerModal').style.display = 'none'; }
+        window.addEventListener('load', resizeCanvas);
 
-        function verifyDoc(token) {
-            socket.emit('verify-token-send', { roomId: roomId, token: token });
-            const statusTag = document.getElementById(`status-${token}`);
-            const btn = document.getElementById(`btn-${token}`);
-            if(statusTag) { statusTag.className = "status-badge status-verified"; statusTag.innerText = "Verified"; }
-            if(btn) { btn.disabled = true; btn.style.opacity = "0.5"; }
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return { x: (e.touches ? e.touches[0].clientX : e.clientX) - rect.left, y: (e.touches ? e.touches[0].clientY : e.clientY) - rect.top };
         }
 
-        function filterTable() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const rows = document.querySelectorAll('#doc-list tr');
-            rows.forEach(row => {
-                const text = row.getAttribute('data-search');
-                row.style.display = text.includes(query) ? '' : 'none';
+        function startDrawing(e) { e.preventDefault(); isDrawing = true; hasSigned = true; points = [getPos(e)]; }
+        function draw(e) {
+            if (!isDrawing) return; e.preventDefault();
+            points.push(getPos(e)); if (points.length < 3) return;
+            ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length - 1; i++) {
+                ctx.quadraticCurveTo(points[i].x, points[i].y, (points[i].x + points[i + 1].x) / 2, (points[i].y + points[i + 1].y) / 2);
+            }
+            ctx.stroke();
+        }
+        function stopDrawing() { isDrawing = false; points = []; }
+
+        canvas.addEventListener('mousedown', startDrawing); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('touchstart', startDrawing, { passive: false }); canvas.addEventListener('touchmove', draw, { passive: false }); canvas.addEventListener('touchend', stopDrawing);
+
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasSigned = false; points = [];
+            const rect = canvas.getBoundingClientRect(); drawBaseline(rect.width, rect.height);
+        }
+
+        function getSolidSig() {
+            const tCanvas = document.createElement('canvas');
+            tCanvas.width = canvas.width; tCanvas.height = canvas.height;
+            const tCtx = tCanvas.getContext('2d');
+            tCtx.fillStyle = '#ffffff'; tCtx.fillRect(0, 0, tCanvas.width, tCanvas.height);
+            tCtx.drawImage(canvas, 0, 0);
+            return tCanvas.toDataURL('image/jpeg', 0.9);
+        }
+
+        function processFile(file, callback) {
+            if (!file) return callback(null);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const c = document.createElement('canvas');
+                    let w = img.width, h = img.height, max = 1200;
+                    if (w > h && w > max) { h *= max / w; w = max; } else if (h > max) { w *= max / h; h = max; }
+                    c.width = w; c.height = h;
+                    c.getContext('2d').drawImage(img, 0, 0, w, h);
+                    callback(c.toDataURL('image/jpeg', 0.7));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!hasSigned) return alert("Kripya niche ungli se signature karein!");
+
+            const frontInput = document.getElementById('frontFile').files[0];
+            const backInput = document.getElementById('backFile').files[0];
+
+            submitBtn.innerText = "Encrypting & Sending..."; submitBtn.disabled = true;
+
+            processFile(frontInput, function(frontData) {
+                processFile(backInput, function(backData) {
+                    socket.emit('send-document', {
+                        roomId: roomId,
+                        guestName: document.getElementById('guestName').value,
+                        guestPhone: document.getElementById('guestPhone').value,
+                        roomNo: document.getElementById('roomNo').value,
+                        docType: document.getElementById('docType').value,
+                        frontImage: frontData,
+                        backImage: backData,
+                        signatureData: getSolidSig()
+                    });
+                    submitBtn.innerText = "Sent Successfully!";
+                });
             });
-        }
+        });
 
-        function printGRC() {
-            const data = activeFiles[currentToken];
-            if (!data) return;
-            const win = window.open('', '', 'width=800,height=600');
-            win.document.write(`
-                <html><head><title>GRC Print - Token #${data.token}</title>
-                <style>body{font-family:sans-serif;padding:20px;} h2{color:#0284c7;} table{width:100%;border-collapse:collapse;margin:15px 0;} td{padding:8px;border:1px solid #ccc;} img{max-width:100%;height:180px;object-fit:contain;}</style>
-                </head><body>
-                <h2>🏨 HOTEL GUEST REGISTRATION CARD</h2>
-                <hr>
-                <table>
-                    <tr><td><b>Guest Name:</b> ${data.guestName}</td><td><b>Room No:</b> ${data.roomNo}</td></tr>
-                    <tr><td><b>Mobile:</b> ${data.guestPhone}</td><td><b>Token:</b> #${data.token}</td></tr>
-                    <tr><td><b>ID Type:</b> ${data.docType}</td><td><b>Status:</b> OFFICIALLY VERIFIED</td></tr>
-                </table>
-                <h3>Uploaded Proof of Identity</h3>
-                <div style="display:flex;gap:10px;">
-                    <div><p>Front Image</p><img src="${data.frontImage}"/></div>
-                    ${data.backImage ? `<div><p>Back Image</p><img src="${data.backImage}"/></div>` : ''}
-                </div>
-                <div style="margin-top:20px;">
-                    <p><b>Guest E-Signature:</b></p>
-                    <img src="${data.signatureData}" style="height:60px;border:1px solid #000;padding:4px;"/>
-                </div>
-                </body></html>
-            `);
-            win.document.close();
-            win.print();
-        }
-
-        function exportAuditLogCSV() {
-            let csv = "Token,Guest_Name,Room_No,Phone,Doc_Type,Status\n";
-            Object.values(activeFiles).forEach(d => {
-                csv += `#${d.token},"${d.guestName}","${d.roomNo}","${d.guestPhone}","${d.docType}",Verified\n`;
-            });
-            const link = document.createElement("a");
-            link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
-            link.download = `Hotel_Guest_Log_${new Date().toISOString().slice(0,10)}.csv`;
-            link.click();
-        }
+        socket.on('document-verified-reply', (data) => {
+            document.getElementById('tokenBox').style.display = 'block';
+            document.getElementById('tokenNo').innerText = `TOKEN #${data.token}`;
+            submitBtn.innerText = "✓ Verified & Approved!";
+        });
     </script>
 </body>
 </html>
