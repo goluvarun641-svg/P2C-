@@ -7,28 +7,30 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #0f172a; color: #f8fafc; padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .card { background: #1e293b; padding: 22px; border-radius: 16px; border: 1px solid #334155; width: 100%; max-width: 440px; }
-        .logo { font-size: 20px; font-weight: bold; color: #38bdf8; text-align: center; margin-bottom: 2px; }
-        .subtitle { font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 12px; }
+        body { background: #0b132b; color: #f8fafc; padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: #1c2541; padding: 22px; border-radius: 20px; border: 1px solid #2a3a5e; width: 100%; max-width: 440px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .logo { font-size: 22px; font-weight: bold; color: #38bdf8; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .subtitle { font-size: 12px; color: #94a3b8; margin-bottom: 16px; }
         
-        .status-indicator { display: block; text-align: center; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 12px; }
-        .status-online { background: #16a34a; color: white; }
-        .status-offline { background: #dc2626; color: white; }
-        
-        .form-row { display: flex; gap: 10px; }
-        .form-group { text-align: left; margin-bottom: 10px; flex: 1; }
-        label { font-size: 11px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 4px; }
-        select, input[type="text"], input[type="tel"], input[type="file"] { width: 100%; padding: 10px; border: 1px solid #475569; border-radius: 8px; font-size: 13px; background: #0f172a; color: white; }
-        
-        .sig-container { background: #ffffff; border-radius: 10px; border: 2px dashed #0284c7; touch-action: none; position: relative; overflow: hidden; }
-        canvas { width: 100%; height: 160px; display: block; border-radius: 8px; cursor: crosshair; }
-        .sig-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-        .clear-btn { background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .status-pill { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 18px; background: #15803d; color: #ffffff; }
 
-        .btn-submit { width: 100%; background: #0284c7; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; }
-        .token-card { display: none; margin-top: 15px; background: #064e3b; border: 1px solid #10b981; padding: 15px; border-radius: 12px; text-align: center; }
-        .token-number { font-size: 28px; font-weight: bold; color: #34d399; margin: 5px 0; }
+        .form-group { text-align: left; margin-bottom: 14px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        label { font-size: 12px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px; }
+        input[type="text"], input[type="tel"], select, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #334155; border-radius: 10px; font-size: 14px; background: #0f172a; color: white; outline: none; }
+        input[type="file"] { font-size: 11px; padding: 8px; }
+        
+        .sig-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .clear-btn { background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        
+        .sig-container { background: #ffffff; border-radius: 12px; border: 2px dashed #0284c7; touch-action: none; overflow: hidden; }
+        canvas { width: 100%; height: 160px; display: block; cursor: crosshair; }
+
+        .btn-submit { width: 100%; background: #0284c7; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 15px; }
+        
+        .token-card { display: none; margin-top: 15px; background: #064e3b; border: 1px solid #10b981; padding: 16px; border-radius: 14px; }
+        .token-number { font-size: 30px; font-weight: bold; color: #34d399; margin: 4px 0; }
     </style>
 </head>
 <body>
@@ -36,22 +38,22 @@
         <div class="logo">🍃 Dibbi Paperless Vault</div>
         <div class="subtitle">Hotel Guest Verification • Digital Check-In</div>
         
-        <div id="connStatus" class="status-indicator status-offline">Connecting...</div>
+        <div id="connStatus" class="status-pill">🟢 Connected to Hotel Desk</div>
 
         <form id="uploadForm">
             <div class="form-group">
                 <label>Guest Full Name *</label>
-                <input type="text" id="guestName" placeholder="e.g. Varun Sharma" required>
+                <input type="text" id="guestName" placeholder="Enter Full Name" required>
             </div>
 
-            <div class="form-row">
+            <div class="grid-2">
                 <div class="form-group">
                     <label>Mobile Number *</label>
-                    <input type="tel" id="guestPhone" placeholder="9876543210" required>
+                    <input type="tel" id="mobile" placeholder="Mobile No." required>
                 </div>
                 <div class="form-group">
                     <label>Room No. *</label>
-                    <input type="text" id="roomNo" placeholder="102" required>
+                    <input type="text" id="roomNo" placeholder="Room No." required>
                 </div>
             </div>
 
@@ -59,13 +61,13 @@
                 <label>Document Type *</label>
                 <select id="docType" required>
                     <option value="Aadhaar Card">Aadhaar Card</option>
-                    <option value="PAN Card">PAN Card</option>
-                    <option value="Driving License">Driving License</option>
                     <option value="Passport">Passport</option>
+                    <option value="Voter ID">Voter ID</option>
+                    <option value="Driving License">Driving License</option>
                 </select>
             </div>
             
-            <div class="form-row">
+            <div class="grid-2">
                 <div class="form-group">
                     <label>ID Front Side *</label>
                     <input type="file" id="frontFile" accept="image/*" required>
@@ -86,35 +88,18 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn-submit" id="submitBtn">Submit Digital Registration 🚀</button>
+            <button type="submit" class="btn-submit" id="submitBtn">✓ Verified & Approved!</button>
         </form>
 
         <div class="token-card" id="tokenBox">
-            <div style="font-size: 12px; color: #a7f3d0;">CHECK-IN SUCCESSFUL</div>
+            <div style="font-size: 11px; color: #a7f3d0; letter-spacing: 1px;">CHECK-IN SUCCESSFUL</div>
             <div class="token-number" id="tokenNo">TOKEN #101</div>
-            <div style="font-size: 11px; color: #6ee7b7;">Paperless Verification Complete</div>
+            <div style="font-size: 12px; color: #6ee7b7;">Paperless Verification Complete</div>
         </div>
     </div>
 
     <script>
         const socket = io();
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomId = urlParams.get('room') || 'counter_jaipur_01';
-
-        const connStatus = document.getElementById('connStatus');
-        const submitBtn = document.getElementById('submitBtn');
-
-        socket.on('connect', () => {
-            connStatus.className = "status-indicator status-online";
-            connStatus.innerText = "🟢 Connected to Hotel Desk";
-            socket.emit('join-room', roomId);
-        });
-
-        socket.on('disconnect', () => {
-            connStatus.className = "status-indicator status-offline";
-            connStatus.innerText = "🔴 Reconnecting...";
-        });
-
         const canvas = document.getElementById('sigCanvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false, hasSigned = false, points = [];
@@ -125,13 +110,13 @@
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
-            ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#000000';
             drawBaseline(rect.width, rect.height);
         }
 
-        function drawBaseline(w, h) {
+        function drawBaseline(width, height) {
             ctx.save(); ctx.beginPath(); ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
-            ctx.setLineDash([4, 4]); ctx.moveTo(10, h - 30); ctx.lineTo(w - 10, h - 30); ctx.stroke(); ctx.restore();
+            ctx.setLineDash([4, 4]); ctx.moveTo(15, height - 30); ctx.lineTo(width - 15, height - 30); ctx.stroke(); ctx.restore();
         }
 
         window.addEventListener('load', resizeCanvas);
@@ -144,7 +129,8 @@
         function startDrawing(e) { e.preventDefault(); isDrawing = true; hasSigned = true; points = [getPos(e)]; }
         function draw(e) {
             if (!isDrawing) return; e.preventDefault();
-            points.push(getPos(e)); if (points.length < 3) return;
+            const pos = getPos(e); points.push(pos);
+            if (points.length < 3) return;
             ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
             for (let i = 1; i < points.length - 1; i++) {
                 ctx.quadraticCurveTo(points[i].x, points[i].y, (points[i].x + points[i + 1].x) / 2, (points[i].y + points[i + 1].y) / 2);
@@ -162,63 +148,52 @@
             const rect = canvas.getBoundingClientRect(); drawBaseline(rect.width, rect.height);
         }
 
-        function getSolidSig() {
-            const tCanvas = document.createElement('canvas');
-            tCanvas.width = canvas.width; tCanvas.height = canvas.height;
-            const tCtx = tCanvas.getContext('2d');
-            tCtx.fillStyle = '#ffffff'; tCtx.fillRect(0, 0, tCanvas.width, tCanvas.height);
+        function fileToBase64(file) {
+            return new Promise((resolve) => {
+                if (!file) return resolve(null);
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function getSolidSignatureData() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.fillStyle = '#ffffff'; tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
             tCtx.drawImage(canvas, 0, 0);
-            return tCanvas.toDataURL('image/jpeg', 0.9);
+            return tempCanvas.toDataURL('image/jpeg', 0.9);
         }
 
-        function processFile(file, callback) {
-            if (!file) return callback(null);
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const c = document.createElement('canvas');
-                    let w = img.width, h = img.height, max = 1200;
-                    if (w > h && w > max) { h *= max / w; w = max; } else if (h > max) { w *= max / h; h = max; }
-                    c.width = w; c.height = h;
-                    c.getContext('2d').drawImage(img, 0, 0, w, h);
-                    callback(c.toDataURL('image/jpeg', 0.7));
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            if (!hasSigned) return alert("Kripya niche ungli se signature karein!");
+            if (!hasSigned) return alert("Please sign before submitting!");
 
-            const frontInput = document.getElementById('frontFile').files[0];
-            const backInput = document.getElementById('backFile').files[0];
+            const frontFile = document.getElementById('frontFile').files[0];
+            const backFile = document.getElementById('backFile').files[0];
 
-            submitBtn.innerText = "Encrypting & Sending..."; submitBtn.disabled = true;
+            const frontBase64 = await fileToBase64(frontFile);
+            const backBase64 = await fileToBase64(backFile);
 
-            processFile(frontInput, function(frontData) {
-                processFile(backInput, function(backData) {
-                    socket.emit('send-document', {
-                        roomId: roomId,
-                        guestName: document.getElementById('guestName').value,
-                        guestPhone: document.getElementById('guestPhone').value,
-                        roomNo: document.getElementById('roomNo').value,
-                        docType: document.getElementById('docType').value,
-                        frontImage: frontData,
-                        backImage: backData,
-                        signatureData: getSolidSig()
-                    });
-                    submitBtn.innerText = "Sent Successfully!";
-                });
+            document.getElementById('submitBtn').innerText = "Submitting Data...";
+            document.getElementById('submitBtn').disabled = true;
+
+            socket.emit('send-document', {
+                guestName: document.getElementById('guestName').value,
+                mobile: document.getElementById('mobile').value,
+                roomNo: document.getElementById('roomNo').value,
+                docType: document.getElementById('docType').value,
+                frontImage: frontBase64,
+                backImage: backBase64,
+                signatureData: getSolidSignatureData()
             });
         });
 
         socket.on('document-verified-reply', (data) => {
             document.getElementById('tokenBox').style.display = 'block';
             document.getElementById('tokenNo').innerText = `TOKEN #${data.token}`;
-            submitBtn.innerText = "✓ Verified & Approved!";
+            document.getElementById('submitBtn').style.display = 'none';
         });
     </script>
 </body>
