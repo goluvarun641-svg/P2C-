@@ -2,7 +2,6 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -14,60 +13,29 @@ const io = new Server(server, {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Disk Data Storage File (Refresh par data bachane ke liye)
-const DB_FILE = path.join(__dirname, 'database.json');
-
-function loadDatabase() {
-    if (fs.existsSync(DB_FILE)) {
-        try {
-            return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-        } catch (e) {
-            return { records: {}, lastToken: 100 };
-        }
-    }
-    return { records: {}, lastToken: 100 };
-}
-
-function saveDatabase(db) {
-    try {
-        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
-    } catch (e) {
-        console.error("Database save error:", e);
-    }
-}
-
-let db = loadDatabase();
+// Persistent State across Laptop Refreshes
+let activeDocuments = {};
+let tokenCounter = 101;
 
 io.on('connection', (socket) => {
-    // Laptop refresh hone par purana data turant reload hoga
-    socket.emit('load-initial-data', db.records);
+    // Send all existing records on reconnect/refresh
+    socket.emit('load-initial-data', activeDocuments);
 
     socket.on('send-document', (data) => {
-        db.lastToken += 1;
-        const token = db.lastToken;
-
-        const record = { 
-            ...data, 
-            token: token, 
-            createdAt: new Date().toISOString(),
-            isVerified: false
-        };
-
-        db.records[token] = record;
-        saveDatabase(db);
-
+        const token = tokenCounter++;
+        const record = { ...data, token: token, createdAt: new Date().toISOString() };
+        activeDocuments[token] = record;
         io.emit('receive-document', record);
     });
 
     socket.on('verify-token-send', (data) => {
-        if (db.records[data.token]) {
-            db.records[data.token].isVerified = true;
-            db.records[data.token].verifiedTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-            saveDatabase(db);
+        if (activeDocuments[data.token]) {
+            activeDocuments[data.token].isVerified = true;
+            activeDocuments[data.token].verifiedTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
         }
         io.emit('document-verified-reply', data);
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Vault Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
