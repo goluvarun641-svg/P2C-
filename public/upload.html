@@ -8,77 +8,55 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #0f172a; color: #f8fafc; padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .card { background: #1e293b; padding: 22px; border-radius: 16px; border: 1px solid #334155; width: 100%; max-width: 440px; }
-        .logo { font-size: 20px; font-weight: bold; color: #38bdf8; text-align: center; margin-bottom: 2px; }
-        .subtitle { font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 12px; }
+        .card { background: #1e293b; padding: 22px; border-radius: 16px; border: 1px solid #334155; width: 100%; max-width: 420px; text-align: center; }
+        .logo { font-size: 20px; font-weight: bold; color: #38bdf8; margin-bottom: 5px; }
+        .subtitle { font-size: 12px; color: #94a3b8; margin-bottom: 15px; }
         
-        .status-indicator { display: block; text-align: center; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 12px; }
+        .status-indicator { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 15px; }
         .status-online { background: #16a34a; color: white; }
         .status-offline { background: #dc2626; color: white; }
         
-        .form-row { display: flex; gap: 10px; }
-        .form-group { text-align: left; margin-bottom: 10px; flex: 1; }
-        label { font-size: 11px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 4px; }
-        select, input[type="text"], input[type="tel"], input[type="file"] { width: 100%; padding: 10px; border: 1px solid #475569; border-radius: 8px; font-size: 13px; background: #0f172a; color: white; }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        label { font-size: 12px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px; }
+        select, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #475569; border-radius: 8px; font-size: 14px; background: #0f172a; color: white; }
         
-        .sig-container { background: #ffffff; border-radius: 10px; border: 2px dashed #0284c7; touch-action: none; position: relative; overflow: hidden; }
-        canvas { width: 100%; height: 160px; display: block; border-radius: 8px; cursor: crosshair; }
-        .sig-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-        .clear-btn { background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .sig-container { background: #ffffff; border-radius: 12px; border: 2px dashed #0284c7; touch-action: none; position: relative; overflow: hidden; }
+        canvas { width: 100%; height: 180px; display: block; border-radius: 10px; cursor: crosshair; }
+        .sig-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .clear-btn { background: #ef4444; color: white; border: none; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
         .btn-submit { width: 100%; background: #0284c7; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; }
-        .token-card { display: none; margin-top: 15px; background: #064e3b; border: 1px solid #10b981; padding: 15px; border-radius: 12px; text-align: center; }
+        
+        .token-card { display: none; margin-top: 20px; background: #064e3b; border: 1px solid #10b981; padding: 15px; border-radius: 12px; }
         .token-number { font-size: 28px; font-weight: bold; color: #34d399; margin: 5px 0; }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="logo">🍃 Dibbi Paperless Vault</div>
-        <div class="subtitle">Hotel Guest Verification • Digital Check-In</div>
+        <div class="subtitle">Direct Digital Verification • Zero Paper</div>
         
-        <div id="connStatus" class="status-indicator status-offline">Connecting...</div>
+        <div id="connStatus" class="status-indicator status-offline">Connecting to Server...</div>
 
         <form id="uploadForm">
             <div class="form-group">
-                <label>Guest Full Name *</label>
-                <input type="text" id="guestName" placeholder="e.g. Varun Sharma" required>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Mobile Number *</label>
-                    <input type="tel" id="guestPhone" placeholder="9876543210" required>
-                </div>
-                <div class="form-group">
-                    <label>Room No. *</label>
-                    <input type="text" id="roomNo" placeholder="102" required>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Document Type *</label>
+                <label>Document Type</label>
                 <select id="docType" required>
                     <option value="Aadhaar Card">Aadhaar Card</option>
                     <option value="PAN Card">PAN Card</option>
-                    <option value="Driving License">Driving License</option>
-                    <option value="Passport">Passport</option>
+                    <option value="Marksheet">Marksheet</option>
+                    <option value="Photo / Signature">Photo / Signature</option>
                 </select>
             </div>
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label>ID Front Side *</label>
-                    <input type="file" id="frontFile" accept="image/*" required>
-                </div>
-                <div class="form-group">
-                    <label>ID Back Side (Optional)</label>
-                    <input type="file" id="backFile" accept="image/*">
-                </div>
+            <div class="form-group">
+                <label>Select ID / Document File</label>
+                <input type="file" id="fileInput" accept="image/*,application/pdf" required>
             </div>
 
             <div class="form-group">
                 <div class="sig-header">
-                    <label style="margin: 0;">Guest E-Signature *</label>
+                    <label style="margin: 0;">Guest Digital Signature (Sign Below)</label>
                     <button type="button" class="clear-btn" onclick="clearSignature()">Clear 🔄</button>
                 </div>
                 <div class="sig-container">
@@ -86,13 +64,13 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn-submit" id="submitBtn">Submit Digital Registration 🚀</button>
+            <button type="submit" class="btn-submit" id="submitBtn">Send & Verify Paperlessly 🚀</button>
         </form>
 
         <div class="token-card" id="tokenBox">
-            <div style="font-size: 12px; color: #a7f3d0;">CHECK-IN SUCCESSFUL</div>
+            <div style="font-size: 12px; color: #a7f3d0;">STATUS: VERIFIED PAPERLESS</div>
             <div class="token-number" id="tokenNo">TOKEN #101</div>
-            <div style="font-size: 11px; color: #6ee7b7;">Paperless Verification Complete</div>
+            <div style="font-size: 11px; color: #6ee7b7;">Paperless Pass Issued by Counter #1</div>
         </div>
     </div>
 
@@ -106,13 +84,13 @@
 
         socket.on('connect', () => {
             connStatus.className = "status-indicator status-online";
-            connStatus.innerText = "🟢 Connected to Hotel Desk";
+            connStatus.innerText = "🟢 Connected to Counter #1";
             socket.emit('join-room', roomId);
         });
 
         socket.on('disconnect', () => {
             connStatus.className = "status-indicator status-offline";
-            connStatus.innerText = "🔴 Reconnecting...";
+            connStatus.innerText = "🔴 Server Reconnecting...";
         });
 
         const canvas = document.getElementById('sigCanvas');
@@ -129,9 +107,9 @@
             drawBaseline(rect.width, rect.height);
         }
 
-        function drawBaseline(w, h) {
+        function drawBaseline(width, height) {
             ctx.save(); ctx.beginPath(); ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
-            ctx.setLineDash([4, 4]); ctx.moveTo(10, h - 30); ctx.lineTo(w - 10, h - 30); ctx.stroke(); ctx.restore();
+            ctx.setLineDash([4, 4]); ctx.moveTo(15, height - 35); ctx.lineTo(width - 15, height - 35); ctx.stroke(); ctx.restore();
         }
 
         window.addEventListener('load', resizeCanvas);
@@ -144,7 +122,8 @@
         function startDrawing(e) { e.preventDefault(); isDrawing = true; hasSigned = true; points = [getPos(e)]; }
         function draw(e) {
             if (!isDrawing) return; e.preventDefault();
-            points.push(getPos(e)); if (points.length < 3) return;
+            const pos = getPos(e); points.push(pos);
+            if (points.length < 3) return;
             ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
             for (let i = 1; i < points.length - 1; i++) {
                 ctx.quadraticCurveTo(points[i].x, points[i].y, (points[i].x + points[i + 1].x) / 2, (points[i].y + points[i + 1].y) / 2);
@@ -162,63 +141,64 @@
             const rect = canvas.getBoundingClientRect(); drawBaseline(rect.width, rect.height);
         }
 
-        function getSolidSig() {
-            const tCanvas = document.createElement('canvas');
-            tCanvas.width = canvas.width; tCanvas.height = canvas.height;
-            const tCtx = tCanvas.getContext('2d');
-            tCtx.fillStyle = '#ffffff'; tCtx.fillRect(0, 0, tCanvas.width, tCanvas.height);
-            tCtx.drawImage(canvas, 0, 0);
-            return tCanvas.toDataURL('image/jpeg', 0.9);
-        }
-
-        function processFile(file, callback) {
-            if (!file) return callback(null);
+        function compressImage(file, callback) {
+            if (!file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = e => callback(e.target.result);
+                reader.readAsDataURL(file);
+                return;
+            }
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    const c = document.createElement('canvas');
-                    let w = img.width, h = img.height, max = 1200;
-                    if (w > h && w > max) { h *= max / w; w = max; } else if (h > max) { w *= max / h; h = max; }
-                    c.width = w; c.height = h;
-                    c.getContext('2d').drawImage(img, 0, 0, w, h);
-                    callback(c.toDataURL('image/jpeg', 0.7));
+                    const canvasImg = document.createElement('canvas');
+                    let width = img.width, height = img.height, maxDim = 1200;
+                    if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                    else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                    canvasImg.width = width; canvasImg.height = height;
+                    canvasImg.getContext('2d').drawImage(img, 0, 0, width, height);
+                    callback(canvasImg.toDataURL('image/jpeg', 0.7));
                 };
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
 
+        function getSolidSignatureData() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.fillStyle = '#ffffff'; tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tCtx.drawImage(canvas, 0, 0);
+            return tempCanvas.toDataURL('image/jpeg', 0.9);
+        }
+
         document.getElementById('uploadForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            if (!hasSigned) return alert("Kripya niche ungli se signature karein!");
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) return;
+            if (!hasSigned) return alert("Kripya niche box mein signature karein!");
 
-            const frontInput = document.getElementById('frontFile').files[0];
-            const backInput = document.getElementById('backFile').files[0];
+            const file = fileInput.files[0];
+            submitBtn.innerText = "Sending to Screen..."; submitBtn.disabled = true;
 
-            submitBtn.innerText = "Encrypting & Sending..."; submitBtn.disabled = true;
-
-            processFile(frontInput, function(frontData) {
-                processFile(backInput, function(backData) {
-                    socket.emit('send-document', {
-                        roomId: roomId,
-                        guestName: document.getElementById('guestName').value,
-                        guestPhone: document.getElementById('guestPhone').value,
-                        roomNo: document.getElementById('roomNo').value,
-                        docType: document.getElementById('docType').value,
-                        frontImage: frontData,
-                        backImage: backData,
-                        signatureData: getSolidSig()
-                    });
-                    submitBtn.innerText = "Sent Successfully!";
+            compressImage(file, function(compressedBase64) {
+                socket.emit('send-document', {
+                    roomId: roomId,
+                    docType: document.getElementById('docType').value,
+                    fileName: file.name,
+                    fileData: compressedBase64,
+                    signatureData: getSolidSignatureData()
                 });
+                submitBtn.innerText = "Waiting for Counter Approval...";
             });
         });
 
         socket.on('document-verified-reply', (data) => {
             document.getElementById('tokenBox').style.display = 'block';
             document.getElementById('tokenNo').innerText = `TOKEN #${data.token}`;
-            submitBtn.innerText = "✓ Verified & Approved!";
+            submitBtn.innerText = "✓ Document Approved!";
         });
     </script>
 </body>
