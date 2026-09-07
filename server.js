@@ -7,56 +7,60 @@ const fs = require('fs');
 const app = express();
 const server = http.createServer(app);
 
-// Socket.io payload limit ko 100MB par set karein
+// Payload size limit ko 100MB badhaya taaki mobile images se disconnect na ho
 const io = new Server(server, { 
     cors: { origin: "*" },
-    maxHttpBufferSize: 1e8 
+    maxHttpBufferSize: 1e8,
+    pingTimeout: 60000,
+    pingInterval: 25000
 });
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json({ limit: '50mb' }));
-
 const DB_FILE = path.join(__dirname, 'database.json');
 
 function loadDatabase() {
     if (fs.existsSync(DB_FILE)) {
-        try { 
-            return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); 
-        } catch (e) { 
-            return { records: {}, lastToken: 100 }; 
-        }
+        try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } 
+        catch (e) { return { records: {}, lastToken: 100 }; }
     }
     return { records: {}, lastToken: 100 };
 }
 
 function saveDatabase(db) {
-    try {
-        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
-    } catch (err) {
-        console.error("Database save failed:", err);
-    }
+    try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8'); } 
+    catch (e) { console.error("Database save error:", e); }
 }
 
-// Safe Base64 Image Saving Helper
-function saveBase64Image(base64Data, filename) {
+// Purane system jaisa exact timestamp naming format (e.g. 1787081431187-891082927.jpeg)
+function saveBase64ToFile(base64Data, defaultExt = 'jpeg') {
     if (!base64Data || typeof base64Data !== 'string') return null;
-    if (base64Data.startsWith('/uploads/')) return base64Data; // Already saved path
 
     try {
-        // Strip out data URL header (e.g. data:image/png;base64,)
+        let ext = defaultExt;
+        const match = base64Data.match(/^data:image\/(\w+);base64,/);
+        if (match) {
+            ext = match[1] === 'jpeg' ? 'jpeg' : match[1];
+        }
+
         const pureBase64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
         const buffer = Buffer.from(pureBase64, 'base64');
-        const filePath = path.join(UPLOAD_DIR, filename);
-        
+
+        // Filename generator matching your existing uploads folder format
+        const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
+        const filePath = path.join(UPLOAD_DIR, fileName);
+
         fs.writeFileSync(filePath, buffer);
-        return `/uploads/${filename}`;
+        return `/uploads/${fileName}`;
     } catch (err) {
-        console.error(`Error saving file ${filename}:`, err);
+        console.error("File save error:", err);
         return null;
     }
 }
@@ -64,6 +68,7 @@ function saveBase64Image(base64Data, filename) {
 let db = loadDatabase();
 
 io.on('connection', (socket) => {
+    console.log('🟢 Client Connected:', socket.id);
     socket.emit('load-initial-data', db.records);
 
     socket.on('send-document', (data) => {
@@ -71,12 +76,12 @@ io.on('connection', (socket) => {
             db.lastToken += 1;
             const token = db.lastToken;
 
-            // Generate unique filenames for images
-            const frontPath = saveBase64Image(data.frontImage, `token_${token}_front.jpg`);
-            const backPath = saveBase64Image(data.backImage, `token_${token}_back.jpg`);
-            const sigPath = saveBase64Image(data.signatureData, `token_${token}_sig.png`);
+            // Base64 images ko physical files banakar public/uploads mein save karein
+            const frontPath = saveBase64ToFile(data.frontImage, 'jpeg');
+            const backPath = saveBase64ToFile(data.backImage, 'jpeg');
+            const sigPath = saveBase64ToFile(data.signatureData, 'png');
 
-            const record = { 
+            const record = {
                 token: token,
                 guestName: data.guestName || 'Guest',
                 mobile: data.mobile || '',
@@ -92,16 +97,19 @@ io.on('connection', (socket) => {
             db.records[token] = record;
             saveDatabase(db);
 
-            // Broadcast to Desk Console & reply to Mobile Client
             io.emit('receive-document', record);
             socket.emit('document-verified-reply', record);
 
-            console.log(`✅ Token #${token} saved successfully in database & uploads folder.`);
+            console.log(`✅ Token #${token} saved successfully in public/uploads/`);
         } catch (error) {
-            console.error("❌ Failed to process send-document:", error);
+            console.error("❌ Send Document Error:", error);
         }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('🔴 Client Disconnected:', socket.id);
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Hotel Desk Vault running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
