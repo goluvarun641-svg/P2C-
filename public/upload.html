@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dibbi Paperless Vault</title>
+    <title>Dibbi Paperless Vault - Mobile Check-In</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -29,8 +29,8 @@
 
         .btn-submit { width: 100%; background: #0284c7; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 15px; }
         
-        .token-card { display: none; margin-top: 15px; background: #064e3b; border: 1px solid #10b981; padding: 16px; border-radius: 14px; }
-        .token-number { font-size: 30px; font-weight: bold; color: #34d399; margin: 4px 0; }
+        .token-card { display: none; margin-top: 15px; background: #064e3b; border: 1px solid #10b981; padding: 20px; border-radius: 14px; }
+        .token-number { font-size: 32px; font-weight: bold; color: #34d399; margin: 6px 0; }
     </style>
 </head>
 <body>
@@ -92,9 +92,9 @@
         </form>
 
         <div class="token-card" id="tokenBox">
-            <div style="font-size: 11px; color: #a7f3d0; letter-spacing: 1px;">CHECK-IN SUCCESSFUL</div>
+            <div style="font-size: 12px; color: #a7f3d0; letter-spacing: 1px; font-weight: bold;">CHECK-IN SUCCESSFUL</div>
             <div class="token-number" id="tokenNo">TOKEN #101</div>
-            <div style="font-size: 12px; color: #6ee7b7;">Paperless Verification Complete</div>
+            <div style="font-size: 13px; color: #6ee7b7;">Paperless Verification Complete</div>
         </div>
     </div>
 
@@ -191,7 +191,7 @@
             if (!hasSigned) return alert("Please sign before submitting!");
 
             const submitBtn = document.getElementById('submitBtn');
-            submitBtn.innerText = "Compressing & Uploading...";
+            submitBtn.innerText = "Processing & Uploading...";
             submitBtn.disabled = true;
 
             const frontFile = document.getElementById('frontFile').files[0];
