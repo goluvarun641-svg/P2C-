@@ -7,6 +7,7 @@ const fs = require('fs');
 const app = express();
 const server = http.createServer(app);
 
+// Socket.io config with 100MB buffer limit to prevent disconnects
 const io = new Server(server, { 
     cors: { origin: "*" },
     maxHttpBufferSize: 1e8,
@@ -14,17 +15,18 @@ const io = new Server(server, {
     pingInterval: 25000
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-// Uploads Folder Path
+// Uploads directory ensure karein
 const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
-// Database File Path (Laptop Hard Drive par permanent save)
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(UPLOAD_DIR));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Permanent JSON Database File Path
 const DB_FILE = path.join(__dirname, 'database.json');
 
 function loadDatabase() {
@@ -43,16 +45,12 @@ function loadDatabase() {
 function saveDatabase(db) {
     try { 
         fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
-        console.log("💾 Database successfully saved to Hard Disk!");
     } catch (e) { 
-        console.error("❌ Database save error:", e); 
+        console.error("Database Save Error:", e); 
     }
 }
 
-// Global DB Object Load
-let db = loadDatabase();
-
-// Base64 to File convertor
+// Base64 ko physical file banakar public/uploads/ mein save karne ka helper
 function saveBase64ToFile(base64Data, defaultExt = 'jpeg') {
     if (!base64Data || typeof base64Data !== 'string') return null;
 
@@ -77,10 +75,12 @@ function saveBase64ToFile(base64Data, defaultExt = 'jpeg') {
     }
 }
 
+let db = loadDatabase();
+
 io.on('connection', (socket) => {
     console.log('🟢 Client Connected:', socket.id);
     
-    // Laptop reboot ke baad bhi purana saara data dashboard ko bhejta hai
+    // Server reboot/shutdown ke baad bhi purana data send karega
     socket.emit('load-initial-data', db.records);
 
     socket.on('send-document', (data) => {
@@ -88,14 +88,14 @@ io.on('connection', (socket) => {
             db.lastToken += 1;
             const token = db.lastToken;
 
-            // Save images to public/uploads
+            // Save images to public/uploads folder
             const frontPath = saveBase64ToFile(data.frontImage, 'jpeg');
             const backPath = saveBase64ToFile(data.backImage, 'jpeg');
             const sigPath = saveBase64ToFile(data.signatureData, 'png');
 
             const now = new Date();
-            const dateStr = now.toLocaleDateString('en-IN'); // e.g. "07/09/2026"
-            const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = now.toLocaleDateString('en-IN');
+            const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
             const record = {
                 token: token,
@@ -108,21 +108,26 @@ io.on('connection', (socket) => {
                 signatureData: sigPath,
                 date: dateStr,
                 time: timeStr,
-                createdAt: now.toISOString()
+                createdAt: now.toISOString(),
+                isVerified: true
             };
 
             db.records[token] = record;
-            saveDatabase(db); // Instantly write to hard drive
+            saveDatabase(db); // Save to hard drive
 
             io.emit('receive-document', record);
             socket.emit('document-verified-reply', record);
 
-            console.log(`✅ Token #${token} saved permanent!`);
+            console.log(`✅ Token #${token} saved permanent in DB and uploads folder.`);
         } catch (error) {
             console.error("❌ Send Document Error:", error);
         }
     });
+
+    socket.on('disconnect', () => {
+        console.log('🔴 Client Disconnected:', socket.id);
+    });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Server active on http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Hotel Desk Vault Server running on http://localhost:${PORT}`));
