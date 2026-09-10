@@ -3,58 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Desk Console - Dibbi Paperless Vault</title>
+    <title>Desk Console - Master Vault</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #0b132b; color: #f8fafc; padding: 20px; }
-        
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .top-nav { font-size: 22px; font-weight: bold; color: #38bdf8; }
-        .btn-excel { background: #16a34a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .btn-excel { background: #16a34a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
         .btn-excel:hover { background: #15803d; }
-
         .main-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
-        
         .qr-section { background: #1c2541; padding: 20px; border-radius: 14px; text-align: center; border: 1px solid #2a3a5e; height: fit-content; }
         #qrcode { background: white; padding: 10px; border-radius: 8px; display: inline-block; margin: 15px 0; }
-        
         .table-section { background: #1c2541; padding: 20px; border-radius: 14px; border: 1px solid #2a3a5e; }
-        
         .search-box { width: 100%; max-width: 320px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; margin-bottom: 15px; outline: none; font-size: 13px; }
-        
         table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 14px 10px; border-bottom: 1px solid #2a3a5e; font-size: 13px; }
+        th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #2a3a5e; font-size: 13px; }
         th { color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 11px; }
-
         .guest-name { font-weight: bold; color: #ffffff; font-size: 14px; }
         .guest-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-
         .doc-badge { background: #0284c7; color: white; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; }
         .status-badge { background: #22c55e; color: #000; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; }
         .sig-thumb { height: 32px; background: white; padding: 2px; border-radius: 4px; }
-
         .btn-view { background: #0284c7; color: white; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; font-size: 12px; }
 
-        /* Inspection Modal */
+        /* Modal View */
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
         .modal-content { background: #1c2541; padding: 25px; border-radius: 16px; width: 90%; max-width: 850px; border: 1px solid #334155; position: relative; }
-        .modal-header h2 { font-size: 20px; color: #ffffff; margin-bottom: 4px; }
-        .modal-header p { font-size: 13px; color: #94a3b8; margin-bottom: 15px; }
-
-        .images-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .images-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
         .img-box { background: #0b132b; border: 1px solid #334155; border-radius: 10px; padding: 10px; text-align: center; }
-        .img-box span { font-size: 11px; font-weight: bold; color: #94a3b8; display: block; margin-bottom: 8px; }
         .img-box img { max-width: 100%; max-height: 220px; border-radius: 6px; object-fit: contain; }
-
-        .modal-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #334155; padding-top: 15px; margin-top: 10px; }
-        .btn-print { background: #f59e0b; color: #000; padding: 10px 20px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-
         .close-btn { position: absolute; right: 20px; top: 20px; color: #94a3b8; font-size: 20px; cursor: pointer; }
 
         /* Printable GRC Document Layout */
-        #printableSlip { display: none; background: white; color: black; padding: 30px; border-radius: 8px; }
+        #printableSlip { display: none; background: white; color: black; padding: 30px; }
         @media print {
             body * { visibility: hidden; }
             #printableSlip, #printableSlip * { visibility: visible; }
@@ -66,18 +49,18 @@
 
     <div class="header-bar">
         <div class="top-nav">Desk Console</div>
-        <button class="btn-excel" onclick="exportToExcel()">📥 Export Excel Register</button>
+        <button class="btn-excel" onclick="exportToExcel()">📊 Export Master Register (.csv)</button>
     </div>
 
     <div class="main-layout">
         <div class="qr-section">
             <h3 style="font-size: 16px;">Guest Scan QR</h3>
             <div id="qrcode"></div>
-            <p style="font-size: 11px; color: #94a3b8;">Counter #1 Live Sync</p>
+            <p style="font-size: 11px; color: #94a3b8;">Scan to Check-In</p>
         </div>
 
         <div class="table-section">
-            <input type="text" id="searchBox" class="search-box" placeholder="Search Name, Room, Mobile or Token..." onkeyup="filterRecords()">
+            <input type="text" id="searchBox" class="search-box" placeholder="Search Guest Name, Room or Token..." onkeyup="filterRecords()">
             <table>
                 <thead>
                     <tr>
@@ -99,28 +82,26 @@
     <div class="modal" id="viewerModal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            <div class="modal-header">
-                <h2 id="mGuestTitle">Guest Name (Room)</h2>
-                <p id="mGuestMeta">Phone: -- | ID Type: -- | Token: --</p>
-            </div>
+            <h2 id="mGuestTitle" style="color: white;">--</h2>
+            <p id="mGuestMeta" style="color: #94a3b8; font-size: 13px; margin-bottom: 10px;">--</p>
 
             <div class="images-grid">
                 <div class="img-box">
-                    <span>FRONT SIDE</span>
+                    <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 5px;">FRONT SIDE</span>
                     <img id="mFrontImg" src="" />
                 </div>
                 <div class="img-box">
-                    <span>BACK SIDE</span>
+                    <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 5px;">BACK SIDE</span>
                     <img id="mBackImg" src="" />
                 </div>
             </div>
 
-            <div class="modal-footer">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #334155; padding-top: 15px;">
                 <div>
-                    <span style="font-size: 12px; color: #cbd5e1; display: block; margin-bottom: 4px;">Guest E-Signature:</span>
-                    <img id="mSigImg" style="height: 45px; background: white; padding: 3px; border-radius: 6px;" src="" />
+                    <span style="font-size: 12px; color: #cbd5e1; display: block;">Guest E-Signature:</span>
+                    <img id="mSigImg" style="height: 45px; background: white; padding: 3px; border-radius: 6px; margin-top: 4px;" src="" />
                 </div>
-                <button class="btn-print" onclick="window.print()">🖨️ Print GRC Slip</button>
+                <button onclick="window.print()" style="background: #f59e0b; color: #000; padding: 10px 20px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">🖨️ Print GRC Slip</button>
             </div>
         </div>
     </div>
@@ -129,7 +110,7 @@
     <div id="printableSlip">
         <div style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
             <h2 style="font-size: 18px; margin: 0;">🏨 HOTEL GUEST REGISTRATION CARD</h2>
-            <span style="font-size: 12px; font-weight: bold;" id="pStatus">Status: OFFICIALLY VERIFIED</span>
+            <span style="font-size: 12px; font-weight: bold;">Status: OFFICIALLY VERIFIED</span>
         </div>
 
         <table style="width: 100%; margin-bottom: 20px; border: 1px solid #ccc;" border="1" cellpadding="8">
@@ -165,58 +146,72 @@
     <script>
         const socket = io();
         const uploadURL = `${window.location.origin}/upload.html`;
-        const recordsMap = {};
+        let recordsMap = {};
 
-        // Generate QR Code for Mobile Upload Form
+        // QR Code Generation
         QRCode.toCanvas(document.createElement('canvas'), uploadURL, (err, canvas) => {
             document.getElementById('qrcode').appendChild(canvas);
         });
 
-        socket.on('load-initial-data', (dataMap) => {
-            document.getElementById('doc-list').innerHTML = '';
-            Object.values(dataMap || {}).forEach(data => addRowToTable(data));
-        });
-
-        socket.on('receive-document', (data) => {
-            addRowToTable(data);
-        });
-
-        function addRowToTable(data) {
-            recordsMap[data.token] = data;
-
-            const tbody = document.getElementById('doc-list');
-            const row = document.createElement('tr');
-            row.id = `row-${data.token}`;
-            
-            const timeDisplay = `${data.date || ''} ${data.time || ''}`;
-
-            row.innerHTML = `
-                <td>${timeDisplay}</td>
-                <td><b>#${data.token}</b></td>
-                <td>
-                    <div class="guest-name">${data.guestName || 'Guest'}</div>
-                    <div class="guest-sub">Room ${data.roomNo || '--'} | ${data.mobile || '--'}</div>
-                </td>
-                <td><span class="doc-badge">${data.docType || 'ID Card'}</span></td>
-                <td><img src="${data.signatureData}" class="sig-thumb" /></td>
-                <td><span class="status-badge">Verified</span></td>
-                <td><button onclick="inspectDoc('${data.token}')" class="btn-view">Inspect</button></td>
-            `;
-            tbody.prepend(row);
+        // 1. Permanent Fix for Refresh / 2-Day Delay: Load data via HTTP API
+        async function loadRecordsFromAPI() {
+            try {
+                const response = await fetch('/api/records');
+                const data = await response.json();
+                recordsMap = data || {};
+                renderTable();
+            } catch (err) {
+                console.error("API Load Error:", err);
+            }
         }
+
+        function renderTable() {
+            const tbody = document.getElementById('doc-list');
+            tbody.innerHTML = '';
+            
+            // Sort Tokens chronologically (Latest First)
+            const tokens = Object.keys(recordsMap).sort((a, b) => Number(b) - Number(a));
+
+            tokens.forEach(token => {
+                const data = recordsMap[token];
+                const row = document.createElement('tr');
+                row.id = `row-${data.token}`;
+                
+                row.innerHTML = `
+                    <td>${data.date || ''} ${data.time || ''}</td>
+                    <td><b>#${data.token}</b></td>
+                    <td>
+                        <div class="guest-name">${data.guestName || 'Guest'}</div>
+                        <div class="guest-sub">Room ${data.roomNo || '--'} | ${data.mobile || '--'}</div>
+                    </td>
+                    <td><span class="doc-badge">${data.docType || 'ID Card'}</span></td>
+                    <td><img src="${data.signatureData}" class="sig-thumb" /></td>
+                    <td><span class="status-badge">Verified</span></td>
+                    <td><button onclick="inspectDoc('${data.token}')" class="btn-view">Inspect</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Live Socket Entry
+        socket.on('receive-document', (data) => {
+            recordsMap[data.token] = data;
+            renderTable();
+        });
+
+        // Initial Load on Page Open or Refresh
+        window.addEventListener('DOMContentLoaded', loadRecordsFromAPI);
 
         function inspectDoc(token) {
             const data = recordsMap[token];
             if (!data) return;
 
-            // Fill Modal
             document.getElementById('mGuestTitle').innerText = `${data.guestName} (Room ${data.roomNo})`;
             document.getElementById('mGuestMeta').innerText = `Phone: ${data.mobile} | ID Type: ${data.docType} | Token: #${data.token}`;
             document.getElementById('mFrontImg').src = data.frontImage || '';
             document.getElementById('mBackImg').src = data.backImage || '';
             document.getElementById('mSigImg').src = data.signatureData || '';
 
-            // Fill Printable Slip
             document.getElementById('pName').innerText = data.guestName;
             document.getElementById('pRoom').innerText = data.roomNo;
             document.getElementById('pMobile').innerText = data.mobile;
@@ -234,27 +229,24 @@
         function filterRecords() {
             const query = document.getElementById('searchBox').value.toLowerCase();
             const rows = document.querySelectorAll('#doc-list tr');
-
             rows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                row.style.display = text.includes(query) ? '' : 'none';
+                row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
             });
         }
 
-        // Export Entire Register to CSV Excel
+        // Single Master Consolidated Excel Register
         function exportToExcel() {
-            const tokens = Object.keys(recordsMap);
-            if (tokens.length === 0) {
-                alert("No records available to export!");
-                return;
-            }
+            const tokens = Object.keys(recordsMap).sort((a, b) => Number(a) - Number(b)); // #101, #102, #103 order
+            if (tokens.length === 0) return alert("Export karne ke liye koi record nahi hai!");
 
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Token,Date,Time,Guest Name,Mobile,Room No,Doc Type,Front Image Path,Back Image Path\n";
+            // Table Header
+            csvContent += "S.No,Token,Date,Time,Guest Name,Mobile,Room No,Doc Type,Front Image File,Back Image File\n";
 
-            tokens.forEach(token => {
+            tokens.forEach((token, index) => {
                 const r = recordsMap[token];
                 const row = [
+                    `"${index + 1}"`,
                     `"${r.token}"`,
                     `"${r.date || ''}"`,
                     `"${r.time || ''}"`,
@@ -271,7 +263,7 @@
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Hotel_Guest_Register_${new Date().toISOString().slice(0,10)}.csv`);
+            link.setAttribute("download", `Master_Hotel_Register_All_Guests.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
